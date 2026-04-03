@@ -2,12 +2,24 @@ function createOutputs(overrides = {}) {
   return {
     preview: true,
     glb: false,
+    glbPathMode: 'variant',
     mp4: false,
     gif: false,
     contactSheet: false,
     metadata: false,
     ...overrides
   };
+}
+
+function createConceptOutputs() {
+  return createOutputs({
+    glb: true,
+    glbPathMode: 'preset',
+    mp4: true,
+    gif: true,
+    contactSheet: true,
+    metadata: true
+  });
 }
 
 function createCyanPalette() {
@@ -45,7 +57,9 @@ function createCyanPalette() {
         paddingX: 0.28,
         paddingY: 0.18,
         depth: 0.26,
-        z: -0.45
+        z: -0.45,
+        transparent: true,
+        depthWrite: false
       }
     },
     glow: {
@@ -87,6 +101,85 @@ function createCyanPalette() {
   };
 }
 
+function createGoldPalette() {
+  return {
+    materials: {
+      face: {
+        color: '#f6d77f',
+        emissive: '#b57a1c',
+        emissiveIntensity: 0.34,
+        metalness: 0.98,
+        roughness: 0.12,
+        clearcoat: 1,
+        clearcoatRoughness: 0.04,
+        reflectivity: 0.94
+      },
+      side: {
+        color: '#bb8730',
+        emissive: '#8b611b',
+        emissiveIntensity: 0.2,
+        metalness: 0.92,
+        roughness: 0.2,
+        clearcoat: 0.94,
+        clearcoatRoughness: 0.1
+      },
+      frame: {
+        enabled: false,
+        color: '#1a1205',
+        emissive: '#3a2708',
+        emissiveIntensity: 0.06,
+        opacity: 0.94,
+        roughness: 0.28,
+        metalness: 0.7,
+        clearcoat: 0.88,
+        clearcoatRoughness: 0.12,
+        paddingX: 0.34,
+        paddingY: 0.24,
+        depth: 0.34,
+        z: -0.34,
+        transparent: false,
+        depthWrite: true
+      }
+    },
+    glow: {
+      enabled: false,
+      haloColor: '#f5db9d',
+      innerColor: '#d7b165',
+      beamColor: '#e5c56f',
+      haloOpacity: 0.14,
+      innerOpacity: 0.08,
+      beamOpacity: 0.04,
+      haloScale: 10.6,
+      innerScale: 7.2,
+      beamWidth: 2.2,
+      beamHeight: 9.4,
+      haloPosition: [0, 0.08, -1.6],
+      innerPosition: [0, 0.08, -1.0],
+      beamPosition: [0, 0.12, -2.0],
+      pulseAmplitude: 0.03,
+      innerPulseAmplitude: 0.02,
+      beamPulseAmplitude: 0.01,
+      rotationFactor: -0.08
+    },
+    lighting: {
+      ambientSky: '#fff4d8',
+      ambientGround: '#1b1102',
+      ambientIntensity: 1.02,
+      keyColor: '#fff1ca',
+      keyIntensity: 3.7,
+      keyPosition: [5.6, 4.9, 7.2],
+      rimColor: '#f2cf85',
+      rimIntensity: 1.9,
+      rimPosition: [-5.2, 1.8, -4.2],
+      lowerColor: '#b8842c',
+      lowerIntensity: 6.8,
+      lowerDistance: 16,
+      lowerDecay: 2,
+      lowerPosition: [0, -2.1, 4.3]
+    }
+  };
+}
+
 function createNeutralPalette() {
   return {
     materials: {
@@ -122,7 +215,9 @@ function createNeutralPalette() {
         paddingX: 0.22,
         paddingY: 0.14,
         depth: 0.2,
-        z: -0.4
+        z: -0.4,
+        transparent: true,
+        depthWrite: false
       }
     },
     glow: {
@@ -164,6 +259,85 @@ function createNeutralPalette() {
   };
 }
 
+function createWarmPalette() {
+  return {
+    materials: {
+      face: {
+        color: '#fcf7ee',
+        emissive: '#f7d38c',
+        emissiveIntensity: 0.34,
+        metalness: 0.24,
+        roughness: 0.14,
+        clearcoat: 0.98,
+        clearcoatRoughness: 0.08,
+        reflectivity: 0.78
+      },
+      side: {
+        color: '#e4b14d',
+        emissive: '#c97d24',
+        emissiveIntensity: 0.24,
+        metalness: 0.32,
+        roughness: 0.24,
+        clearcoat: 0.78,
+        clearcoatRoughness: 0.16
+      },
+      frame: {
+        enabled: false,
+        color: '#f7cf7b',
+        emissive: '#dc8b32',
+        emissiveIntensity: 0.12,
+        opacity: 0.02,
+        roughness: 0.1,
+        metalness: 0.16,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.08,
+        paddingX: 0.18,
+        paddingY: 0.12,
+        depth: 0.16,
+        z: -0.35,
+        transparent: true,
+        depthWrite: false
+      }
+    },
+    glow: {
+      enabled: true,
+      haloColor: '#ffd36d',
+      innerColor: '#ff9d5b',
+      beamColor: '#ffcb73',
+      haloOpacity: 0.26,
+      innerOpacity: 0.16,
+      beamOpacity: 0.1,
+      haloScale: 10.4,
+      innerScale: 7.4,
+      beamWidth: 2.2,
+      beamHeight: 8.6,
+      haloPosition: [0, -0.02, -1.6],
+      innerPosition: [0, -0.02, -1.0],
+      beamPosition: [0, 0.02, -1.95],
+      pulseAmplitude: 0.04,
+      innerPulseAmplitude: 0.03,
+      beamPulseAmplitude: 0.02,
+      rotationFactor: -0.1
+    },
+    lighting: {
+      ambientSky: '#fff6e0',
+      ambientGround: '#120a02',
+      ambientIntensity: 1.08,
+      keyColor: '#fff0c2',
+      keyIntensity: 2.6,
+      keyPosition: [5.2, 4.6, 7.1],
+      rimColor: '#ffc766',
+      rimIntensity: 1.5,
+      rimPosition: [-5.4, 1.6, -4.1],
+      lowerColor: '#d48b2b',
+      lowerIntensity: 5.8,
+      lowerDistance: 18,
+      lowerDecay: 2,
+      lowerPosition: [0, -2.0, 4.2]
+    }
+  };
+}
+
 export const sceneDefaults = {
   width: 1024,
   height: 1024,
@@ -177,6 +351,12 @@ export const sceneDefaults = {
   bevelSegments: 5,
   curveSegments: 20,
   svgUrl: '',
+  baseHalo: {
+    enabled: false
+  },
+  projectionPlate: {
+    enabled: false
+  },
   camera: {
     fov: 30,
     position: [0, 0.35, 12.8],
@@ -316,6 +496,227 @@ export const presetDefinitions = {
         driftRoll: 0.08
       }
     }
+  },
+  'floating-luxury-hologram': {
+    label: 'Floating Luxury Hologram',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.7,
+      camera: {
+        position: [0, 0.34, 13.2],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.1,
+        orbitYAmplitude: 0.035,
+        orbitZAmplitude: 0.04
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.08,
+        turns: 1,
+        tiltX: 0.22,
+        driftY: 0.024,
+        driftRoll: 0.018
+      },
+      extrusionDepth: 42,
+      bevelThickness: 5,
+      bevelSize: 3.4,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#9af7ff',
+        innerColor: '#37d7ef',
+        beamColor: '#74efff',
+        haloOpacity: 0.34,
+        innerOpacity: 0.24,
+        beamOpacity: 0.12,
+        haloScale: 9.4,
+        innerScale: 6.8,
+        beamWidth: 2.25,
+        beamHeight: 9.6,
+        haloPosition: [0, 0.16, -1.6],
+        innerPosition: [0, 0.13, -0.98],
+        beamPosition: [0, -0.04, -1.9],
+        pulseAmplitude: 0.05,
+        innerPulseAmplitude: 0.04,
+        beamPulseAmplitude: 0.025,
+        rotationFactor: -0.12
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#5defff',
+        opacity: 0.22,
+        width: 5.8,
+        depth: 3.2,
+        y: -1.32,
+        z: 0,
+        pulseAmplitude: 0.04,
+        scalePulse: 0.08
+      },
+      materials: {
+        face: {
+          emissiveIntensity: 0.92,
+          metalness: 0.28,
+          roughness: 0.14,
+          clearcoat: 1,
+          clearcoatRoughness: 0.12
+        },
+        side: {
+          emissiveIntensity: 0.72,
+          metalness: 0.3,
+          roughness: 0.3
+        },
+        frame: {
+          enabled: false
+        }
+      }
+    }
+  },
+  'spinning-3d-emblem': {
+    label: 'Spinning 3D Emblem',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#020100',
+      ...createGoldPalette(),
+      logoSize: 5.65,
+      camera: {
+        position: [0, 0.22, 13.6],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.04,
+        orbitYAmplitude: 0.015,
+        orbitZAmplitude: 0.02
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.11,
+        turns: 1,
+        tiltX: 0.16,
+        driftY: 0.008,
+        driftRoll: 0.008
+      },
+      extrusionDepth: 54,
+      bevelThickness: 8.5,
+      bevelSize: 5.1,
+      bevelSegments: 7,
+      baseHalo: {
+        enabled: false
+      },
+      projectionPlate: {
+        enabled: false
+      }
+    }
+  },
+  'futuristic-projection': {
+    label: 'Futuristic Projection',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.6,
+      camera: {
+        position: [0, 0.3, 13.05],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.09,
+        orbitYAmplitude: 0.03,
+        orbitZAmplitude: 0.035
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.07,
+        turns: 1,
+        tiltX: 0.24,
+        driftY: 0.024,
+        driftRoll: 0.02
+      },
+      extrusionDepth: 38,
+      bevelThickness: 4.5,
+      bevelSize: 3.1,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#98f8ff',
+        innerColor: '#74cfff',
+        beamColor: '#b9f9ff',
+        haloOpacity: 0.4,
+        innerOpacity: 0.28,
+        beamOpacity: 0.18,
+        haloScale: 9.8,
+        innerScale: 7.1,
+        beamWidth: 2.4,
+        beamHeight: 10.4,
+        haloPosition: [0, 0.18, -1.65],
+        innerPosition: [0, 0.14, -1.02],
+        beamPosition: [0, -0.02, -1.92],
+        pulseAmplitude: 0.07,
+        innerPulseAmplitude: 0.05,
+        beamPulseAmplitude: 0.04,
+        rotationFactor: -0.14
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#59e1ff',
+        opacity: 0.12,
+        width: 5.4,
+        depth: 3,
+        y: -1.34,
+        z: 0,
+        pulseAmplitude: 0.03,
+        scalePulse: 0.05
+      },
+      projectionPlate: {
+        enabled: true,
+        color: '#73efff',
+        underGlowColor: '#1ebbe8',
+        opacity: 0.34,
+        underGlowOpacity: 0.08,
+        width: 6.2,
+        depth: 3.7,
+        y: -1.36,
+        z: 0,
+        rotationFactor: 0.08,
+        pulseAmplitude: 0.05,
+        scalePulse: 0.04
+      },
+      materials: {
+        face: {
+          color: '#a4fbff',
+          emissive: '#4ce3ff',
+          emissiveIntensity: 1.02,
+          metalness: 0.18,
+          roughness: 0.12,
+          clearcoat: 1,
+          clearcoatRoughness: 0.1,
+          reflectivity: 0.82
+        },
+        side: {
+          color: '#11658c',
+          emissive: '#0f8ab8',
+          emissiveIntensity: 0.62,
+          metalness: 0.24,
+          roughness: 0.28,
+          clearcoat: 0.66,
+          clearcoatRoughness: 0.2
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      lighting: {
+        ambientSky: '#d8fdff',
+        ambientGround: '#00131a',
+        ambientIntensity: 1.45,
+        keyColor: '#dbfaff',
+        keyIntensity: 2.6,
+        keyPosition: [5.1, 5.4, 6.8],
+        rimColor: '#7edaff',
+        rimIntensity: 1.9,
+        rimPosition: [-5.4, 1.6, -4.6],
+        lowerColor: '#1bc0ef',
+        lowerIntensity: 10.8,
+        lowerDistance: 22,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.05, 4.5]
+      }
+    }
   }
 };
 
@@ -414,6 +815,62 @@ export const logos = {
         }
       }
     }
+  },
+  'munchies-and-mimosas': {
+    label: 'Munchies and Mimosas',
+    sourceSvg: 'source/munchies-and-mimosas/munchies-and-mimosas-transparent.svg',
+    defaultVariant: 'display',
+    palette: createWarmPalette(),
+    variants: {
+      full: {
+        label: 'Full',
+        derivedSvg: 'source/munchies-and-mimosas/full.svg',
+        derive: {
+          mode: 'copy'
+        },
+        scene: {
+          logoSize: 4.95,
+          camera: {
+            position: [0, 0.02, 18.1],
+            lookAt: [0, -0.05, 0]
+          },
+          animation: {
+            tiltX: 0.14,
+            driftY: 0.03,
+            driftRoll: 0.015
+          },
+          materials: {
+            frame: {
+              enabled: false
+            }
+          }
+        }
+      },
+      display: {
+        label: 'Display',
+        derivedSvg: 'source/munchies-and-mimosas/display.svg',
+        derive: {
+          mode: 'copy'
+        },
+        scene: {
+          logoSize: 4.7,
+          camera: {
+            position: [0, 0.02, 18.8],
+            lookAt: [0, -0.07, 0]
+          },
+          animation: {
+            tiltX: 0.12,
+            driftY: 0.02,
+            driftRoll: 0.012
+          },
+          materials: {
+            frame: {
+              enabled: false
+            }
+          }
+        }
+      }
+    }
   }
 };
 
@@ -427,6 +884,15 @@ export const exampleJobs = [
   { logo: 'earth-saving-solutions', variant: 'display', preset: 'spindisplay-loop' },
   { logo: 'earth-saving-solutions', variant: 'display', preset: 'proof-pack' }
 ];
+
+export const jobSets = {
+  examples: exampleJobs,
+  'big-eazy-concepts': [
+    { logo: 'big-eazy', variant: 'display', preset: 'floating-luxury-hologram' },
+    { logo: 'big-eazy', variant: 'display', preset: 'spinning-3d-emblem' },
+    { logo: 'big-eazy', variant: 'display', preset: 'futuristic-projection' }
+  ]
+};
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -500,6 +966,16 @@ export function getPresetDefinition(presetId) {
   }
 
   return preset;
+}
+
+export function getJobSetDefinition(jobSetId) {
+  const jobs = jobSets[jobSetId];
+
+  if (!jobs) {
+    throw new Error(`Unknown job set "${jobSetId}".`);
+  }
+
+  return jobs;
 }
 
 export function getResolvedRenderProfile(logoId, variantId, presetId) {

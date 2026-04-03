@@ -16,8 +16,8 @@ import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { chromium } from 'playwright';
 import {
-  exampleJobs,
   getLogoDefinition,
+  getJobSetDefinition,
   getPresetDefinition,
   getResolvedRenderProfile
 } from './render-manifest.mjs';
@@ -28,6 +28,7 @@ const rootDir = path.resolve(__dirname, '..');
 function parseArgs(argv) {
   const options = {
     examples: false,
+    jobSet: null,
     logo: null,
     variant: null,
     preset: null
@@ -38,6 +39,12 @@ function parseArgs(argv) {
 
     if (arg === '--examples') {
       options.examples = true;
+      continue;
+    }
+
+    if (arg === '--job-set') {
+      options.jobSet = argv[index + 1];
+      index += 1;
       continue;
     }
 
@@ -64,7 +71,11 @@ function parseArgs(argv) {
 
 function resolveJobs(options) {
   if (options.examples) {
-    return exampleJobs;
+    return getJobSetDefinition('examples').map((job) => ({ ...job }));
+  }
+
+  if (options.jobSet) {
+    return getJobSetDefinition(options.jobSet).map((job) => ({ ...job }));
   }
 
   const logoId = options.logo || 'big-eazy';
@@ -96,6 +107,7 @@ function getRenderOutputs(logoId, variantId, presetId) {
 
   return {
     dir: baseDir,
+    glb: path.join(baseDir, 'asset.glb'),
     preview: path.join(baseDir, 'preview.png'),
     mp4: path.join(baseDir, 'master.mp4'),
     gif: path.join(baseDir, 'preview.gif'),
@@ -233,9 +245,7 @@ async function ensureDerivedVariant(logoId, variantId) {
   ]);
 }
 
-async function exportGlbIfNeeded(page, logoId, variantId, glbCache) {
-  const glbPath = getVariantGlbPath(logoId, variantId);
-
+async function exportGlbIfNeeded(page, glbPath, glbCache) {
   if (glbCache.has(glbPath)) {
     return;
   }
@@ -277,6 +287,10 @@ async function buildJob(page, origin, job, glbCache) {
   const profile = getResolvedRenderProfile(job.logo, job.variant, job.preset);
   const outputs = getRenderOutputs(job.logo, job.variant, job.preset);
   await mkdir(outputs.dir, { recursive: true });
+  const glbPath =
+    profile.outputs.glbPathMode === 'preset'
+      ? outputs.glb
+      : getVariantGlbPath(job.logo, job.variant);
 
   const url = new URL(`${origin}/viewer/index.html`);
   url.searchParams.set('logo', job.logo);
@@ -291,7 +305,9 @@ async function buildJob(page, origin, job, glbCache) {
     timeout: 120000
   });
 
-  await exportGlbIfNeeded(page, job.logo, job.variant, glbCache);
+  if (profile.outputs.glb) {
+    await exportGlbIfNeeded(page, glbPath, glbCache);
+  }
 
   await page.evaluate((value) => {
     window.sceneApi.setProgress(value);

@@ -1,6 +1,8 @@
 # SVG Render Workflow
 
-This repo turns logo SVGs into reusable 3D assets and public-ready example renders. The workflow is now manifest-driven, supports multiple logos, and can build both faithful and display-optimized variants.
+This repo turns logo SVGs into reusable 3D assets and public-ready example renders. The workflow is manifest-driven, supports multiple logos, and can build both faithful and display-optimized variants.
+
+Current Big Eazy concept work is tuned first for a `22-23.6 inch` single-fan hologram display in the `MSBHZ-YY60-S4` class, assuming a clear acrylic or glass-style front cover. That means the pipeline favors center-weighted composition, thicker readable forms, safe silhouette massing, and black-background contrast over delicate decorative effects that only look good in a flat browser preview.
 
 ## Gallery
 
@@ -33,6 +35,28 @@ Display animated proof pack:
 Contact sheet:
 
 ![Big Eazy contact sheet](renders/big-eazy/display/proof-pack/contact-sheet.png)
+
+### Big Eazy Concept Families
+
+Floating luxury hologram:
+
+![Big Eazy floating luxury hologram](renders/big-eazy/display/floating-luxury-hologram/preview.png)
+
+Spinning 3D emblem:
+
+![Big Eazy spinning 3D emblem](renders/big-eazy/display/spinning-3d-emblem/preview.png)
+
+Futuristic projection:
+
+![Big Eazy futuristic projection](renders/big-eazy/display/futuristic-projection/preview.png)
+
+Concept rotation contact sheets:
+
+![Big Eazy floating luxury hologram contact sheet](renders/big-eazy/display/floating-luxury-hologram/contact-sheet.png)
+
+![Big Eazy spinning 3D emblem contact sheet](renders/big-eazy/display/spinning-3d-emblem/contact-sheet.png)
+
+![Big Eazy futuristic projection contact sheet](renders/big-eazy/display/futuristic-projection/contact-sheet.png)
 
 ### Earth Saving Solutions
 
@@ -80,6 +104,9 @@ Display contact sheet:
 - `premium-turntable`: polished studio-style spin
 - `hero-still`: front-facing still for README/client preview use
 - `proof-pack`: loop plus GIF, contact sheet, and `ffprobe` validation metadata
+- `floating-luxury-hologram`: restrained cyan/teal floating hologram treatment tuned for real single-fan readability
+- `spinning-3d-emblem`: gold-forward bevel-heavy concept with the strongest real-hardware readability bias
+- `futuristic-projection`: projection-in-air treatment with a controlled plate/beam system that frames the logo instead of overpowering it
 
 ## Key Files
 
@@ -117,6 +144,12 @@ Display contact sheet:
 - Big Eazy premium turntable: [renders/big-eazy/display/premium-turntable/master.mp4](renders/big-eazy/display/premium-turntable/master.mp4)
 - Big Eazy proof GIF: [renders/big-eazy/display/proof-pack/preview.gif](renders/big-eazy/display/proof-pack/preview.gif)
 - Big Eazy proof metadata: [renders/big-eazy/display/proof-pack/ffprobe.json](renders/big-eazy/display/proof-pack/ffprobe.json)
+- Big Eazy floating luxury hologram MP4: [renders/big-eazy/display/floating-luxury-hologram/master.mp4](renders/big-eazy/display/floating-luxury-hologram/master.mp4)
+- Big Eazy floating luxury hologram GLB: [renders/big-eazy/display/floating-luxury-hologram/asset.glb](renders/big-eazy/display/floating-luxury-hologram/asset.glb)
+- Big Eazy spinning 3D emblem MP4: [renders/big-eazy/display/spinning-3d-emblem/master.mp4](renders/big-eazy/display/spinning-3d-emblem/master.mp4)
+- Big Eazy spinning 3D emblem GLB: [renders/big-eazy/display/spinning-3d-emblem/asset.glb](renders/big-eazy/display/spinning-3d-emblem/asset.glb)
+- Big Eazy futuristic projection MP4: [renders/big-eazy/display/futuristic-projection/master.mp4](renders/big-eazy/display/futuristic-projection/master.mp4)
+- Big Eazy futuristic projection GLB: [renders/big-eazy/display/futuristic-projection/asset.glb](renders/big-eazy/display/futuristic-projection/asset.glb)
 - ESS display SpinDisplay loop: [renders/earth-saving-solutions/display/spindisplay-loop/master.mp4](renders/earth-saving-solutions/display/spindisplay-loop/master.mp4)
 - ESS display proof GIF: [renders/earth-saving-solutions/display/proof-pack/preview.gif](renders/earth-saving-solutions/display/proof-pack/preview.gif)
 - ESS display proof metadata: [renders/earth-saving-solutions/display/proof-pack/ffprobe.json](renders/earth-saving-solutions/display/proof-pack/ffprobe.json)
@@ -149,6 +182,20 @@ Build one logo/variant/preset combination:
 npm run build:logo -- --logo earth-saving-solutions --variant display --preset spindisplay-loop
 ```
 
+Build one Big Eazy concept family:
+
+```bash
+npm run build:concept -- --logo big-eazy --variant display --preset floating-luxury-hologram
+npm run build:concept -- --logo big-eazy --variant display --preset spinning-3d-emblem
+npm run build:concept -- --logo big-eazy --variant display --preset futuristic-projection
+```
+
+Build the full Big Eazy concept batch:
+
+```bash
+npm run build:all-concepts
+```
+
 Compatibility alias for the original Big Eazy SpinDisplay loop:
 
 ```bash
@@ -160,12 +207,41 @@ npm run build:spin
 ```text
 source/<logo-id>/<variant>.svg
 source/<logo-id>/<variant>.glb
+renders/<logo-id>/<variant>/<preset>/asset.glb
 renders/<logo-id>/<variant>/<preset>/preview.png
 renders/<logo-id>/<variant>/<preset>/master.mp4
 renders/<logo-id>/<variant>/<preset>/preview.gif
 renders/<logo-id>/<variant>/<preset>/contact-sheet.png
 renders/<logo-id>/<variant>/<preset>/ffprobe.json
 ```
+
+Variant-level GLBs stay in `source/<logo-id>/<variant>.glb` for backward compatibility. Concept presets that alter bevel/depth also write a deterministic preset-specific GLB to `renders/<logo-id>/<variant>/<preset>/asset.glb`.
+
+## Hardware Target
+
+- Default target is a `22-23.6 inch` single-fan hologram display in the `MSBHZ-YY60-S4` family
+- Assume a clear acrylic or glass-style front shield is present during playback
+- Keep critical logo mass centered and away from the outer circumference
+- Favor thicker forms, clean negative space, and strong silhouette contrast against black
+- Avoid hairline borders, glitter noise, fragile outer-edge details, or subtle dark-on-dark metallic reads
+- Use glow, beams, plates, and halos only when they reinforce readability
+
+## Recommended SpinDisplay Workflow
+
+1. Build from `big-eazy/display` unless you intentionally want the full brand lockup.
+2. Review `preview.png` first for centered massing and safe silhouette.
+3. Check `contact-sheet.png` and `preview.gif` for readability through rotation.
+4. Validate `ffprobe.json` before deployment packaging.
+5. Use the black-background `master.mp4` for fan testing.
+
+## Adding Presets
+
+Add or tune future looks in [scripts/render-manifest.mjs](scripts/render-manifest.mjs):
+
+- define a new preset under `presetDefinitions`
+- decide whether the preset should export a variant-level or preset-level GLB
+- add any reusable job batch under `jobSets`
+- keep new effects compatible with the existing viewer config shape before extending [viewer/app.js](viewer/app.js)
 
 ## Defaults
 
@@ -181,6 +257,7 @@ renders/<logo-id>/<variant>/<preset>/ffprobe.json
 - The workflow is config-driven through the manifest, not hardcoded to one logo.
 - The public repo includes non-sensitive source logos and generated render assets.
 - Display variants are optimized for motion readability and are not intended to replace the original brand assets.
+- Big Eazy concept presets are tuned for real hologram-fan playback first, not just flat-screen preview aesthetics.
 
 ## More Ideas
 
