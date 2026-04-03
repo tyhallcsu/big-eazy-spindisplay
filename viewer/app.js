@@ -43,6 +43,7 @@ const PRESET_ASSET_DEFINITIONS = [
     fileName: 'contact-sheet.png'
   }
 ];
+const surfaceTextureCache = new Map();
 
 function normalizeHexColor(value) {
   if (!value) {
@@ -75,6 +76,19 @@ function normalizeColorMode(value) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function lerp(start, end, t) {
+  return start + (end - start) * t;
+}
+
+function smoothstep(edge0, edge1, value) {
+  if (edge0 === edge1) {
+    return value >= edge1 ? 1 : 0;
+  }
+
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - (2 * t));
 }
 
 function hexToColor(hex) {
@@ -196,6 +210,32 @@ function applyRuntimePalette(config, palette) {
     config.shieldPanel.edgeColor = `#${palette.inner}`;
   }
 
+  if (config.logoOutline.enabled) {
+    config.logoOutline.color = `#${palette.halo}`;
+
+    if (config.logoOutline.secondaryColor) {
+      config.logoOutline.secondaryColor = `#${palette.inner}`;
+    }
+  }
+
+  if (config.backplate.enabled) {
+    config.backplate.color = `#${palette.ground}`;
+    config.backplate.emissive = `#${palette.lower}`;
+  }
+
+  if (config.sweepLight.enabled) {
+    config.sweepLight.color = `#${palette.halo}`;
+  }
+
+  if (config.stadiumBeams.enabled) {
+    config.stadiumBeams.color = `#${palette.beam}`;
+    config.stadiumBeams.coreColor = `#${palette.halo}`;
+  }
+
+  if (config.sequence.mode === 'wireframe-reveal') {
+    config.sequence.wireColor = `#${palette.halo}`;
+  }
+
   config.lighting.ambientSky = `#${palette.sky}`;
   config.lighting.ambientGround = `#${palette.ground}`;
   config.lighting.keyColor = `#${palette.halo}`;
@@ -293,6 +333,8 @@ let downloadGlbButton;
 const presetAssetButtons = new Map();
 let glowParts = null;
 let stageParts = null;
+let logoLayerParts = null;
+let sequenceMaterialState = null;
 let activeColorState = {
   colorMode: REQUESTED_COLOR_SELECTION.mode,
   primaryColor: REQUESTED_COLOR_SELECTION.primaryColor,
@@ -1054,29 +1096,216 @@ function radiusPoint(angle, radius) {
   };
 }
 
-function createMaterialPair(colors) {
+function createSweepTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 1024;
+
+  const context = canvas.getContext('2d');
+  const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  gradient.addColorStop(0.48, 'rgba(255, 255, 255, 0.08)');
+  gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.98)');
+  gradient.addColorStop(0.52, 'rgba(255, 255, 255, 0.12)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const fade = context.createLinearGradient(0, 0, 0, canvas.height);
+  fade.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  fade.addColorStop(0.2, 'rgba(255, 255, 255, 1)');
+  fade.addColorStop(0.8, 'rgba(255, 255, 255, 1)');
+  fade.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  context.globalCompositeOperation = 'destination-in';
+  context.fillStyle = fade;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function createLedGridTexture(pattern = {}) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+
+  const context = canvas.getContext('2d');
+  const cellSize = Math.round(clamp(pattern.cellSize ?? 24, 12, 64));
+  const gap = clamp(pattern.gap ?? 0.4, 0.08, 0.82);
+  const contrast = clamp(pattern.contrast ?? 1, 0.6, 1.8);
+  const radius = cellSize * (0.5 - (gap * 0.36));
+  context.fillStyle = 'rgb(22, 22, 22)';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = cellSize / 2; y < canvas.height; y += cellSize) {
+    for (let x = cellSize / 2; x < canvas.width; x += cellSize) {
+      const wave = (Math.sin((x * 0.06) + (y * 0.04)) + 1) * 0.5;
+      const intensity = clamp((0.4 + (wave * 0.55)) * contrast, 0, 1);
+      const value = Math.round(255 * intensity);
+      context.fillStyle = `rgb(${value}, ${value}, ${value})`;
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function createBrushedMetalTexture(pattern = {}) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+
+  const context = canvas.getContext('2d');
+  const strength = clamp(pattern.strength ?? 0.35, 0, 1);
+  context.fillStyle = 'rgb(180, 180, 180)';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < canvas.height; y += 2) {
+    const wave = (Math.sin(y * 0.1) + Math.sin(y * 0.032 + 1.5)) * 0.5;
+    const shade = Math.round(150 + (wave * 55 * strength));
+    context.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+    context.fillRect(0, y, canvas.width, 1);
+  }
+
+  for (let x = 0; x < canvas.width; x += 128) {
+    context.fillStyle = 'rgba(255, 255, 255, 0.02)';
+    context.fillRect(x, 0, 1, canvas.height);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function createDecoFrameTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const context = canvas.getContext('2d');
+
+  context.fillStyle = 'rgb(34, 24, 14)';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.strokeStyle = 'rgba(212, 170, 90, 0.95)';
+  context.lineWidth = 18;
+  context.strokeRect(64, 64, canvas.width - 128, canvas.height - 128);
+
+  context.strokeStyle = 'rgba(235, 200, 125, 0.75)';
+  context.lineWidth = 6;
+  context.strokeRect(108, 108, canvas.width - 216, canvas.height - 216);
+
+  context.beginPath();
+  context.moveTo(canvas.width * 0.5, 90);
+  context.lineTo(canvas.width * 0.5, canvas.height - 90);
+  context.moveTo(90, canvas.height * 0.5);
+  context.lineTo(canvas.width - 90, canvas.height * 0.5);
+  context.strokeStyle = 'rgba(190, 145, 75, 0.28)';
+  context.lineWidth = 4;
+  context.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function getSurfaceTexture(pattern) {
+  if (!pattern || !pattern.mode) {
+    return null;
+  }
+
+  const cacheKey = JSON.stringify(pattern);
+
+  if (surfaceTextureCache.has(cacheKey)) {
+    return surfaceTextureCache.get(cacheKey);
+  }
+
+  let texture = null;
+
+  switch (pattern.mode) {
+    case 'led-grid':
+      texture = createLedGridTexture(pattern);
+      break;
+    case 'brushed-metal':
+      texture = createBrushedMetalTexture(pattern);
+      break;
+    case 'deco-frame':
+      texture = createDecoFrameTexture();
+      break;
+    default:
+      texture = null;
+      break;
+  }
+
+  surfaceTextureCache.set(cacheKey, texture);
+  return texture;
+}
+
+function applySurfacePattern(material, pattern) {
+  const texture = getSurfaceTexture(pattern);
+
+  if (!texture) {
+    return;
+  }
+
+  material.map = texture;
+
+  if (pattern.mode === 'led-grid') {
+    material.emissiveMap = texture;
+    material.emissiveIntensity *= clamp(pattern.contrast ?? 1.2, 0.8, 2.2);
+    material.roughness = clamp(material.roughness + 0.12, 0, 1);
+  }
+}
+
+function createPhysicalMaterial(settings, colorHex, emissiveHex) {
+  const material = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(colorHex),
+    emissive: new THREE.Color(emissiveHex),
+    emissiveIntensity: settings.emissiveIntensity ?? 0,
+    metalness: settings.metalness ?? 0,
+    roughness: settings.roughness ?? 0.5,
+    clearcoat: settings.clearcoat ?? 0,
+    clearcoatRoughness: settings.clearcoatRoughness ?? 0,
+    reflectivity: settings.reflectivity ?? 0.5,
+    transmission: settings.transmission ?? 0,
+    thickness: settings.thickness ?? 0,
+    ior: settings.ior ?? 1.5,
+    transparent:
+      settings.transparent ?? ((settings.opacity ?? 1) < 1 || (settings.transmission ?? 0) > 0),
+    opacity: settings.opacity ?? 1,
+    attenuationDistance: settings.attenuationDistance ?? Infinity,
+    iridescence: settings.iridescence ?? 0,
+    iridescenceIOR: settings.iridescenceIOR ?? 1.3,
+    iridescenceThicknessRange: settings.iridescenceThicknessRange ?? [100, 400],
+    side: THREE.DoubleSide
+  });
+
+  if (settings.attenuationColor) {
+    material.attenuationColor = new THREE.Color(settings.attenuationColor);
+  }
+
+  applySurfacePattern(material, settings.surfacePattern);
+
+  return material;
+}
+
+function createMaterialPair(colors, overrides = {}) {
+  const faceConfig = {
+    ...CONFIG.materials.face,
+    ...(overrides.face || {})
+  };
+  const sideConfig = {
+    ...CONFIG.materials.side,
+    ...(overrides.side || {})
+  };
+
   return {
-    face: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(colors.face),
-      emissive: new THREE.Color(colors.faceEmissive),
-      emissiveIntensity: CONFIG.materials.face.emissiveIntensity,
-      metalness: CONFIG.materials.face.metalness,
-      roughness: CONFIG.materials.face.roughness,
-      clearcoat: CONFIG.materials.face.clearcoat,
-      clearcoatRoughness: CONFIG.materials.face.clearcoatRoughness,
-      reflectivity: CONFIG.materials.face.reflectivity,
-      side: THREE.DoubleSide
-    }),
-    side: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(colors.side),
-      emissive: new THREE.Color(colors.sideEmissive),
-      emissiveIntensity: CONFIG.materials.side.emissiveIntensity,
-      metalness: CONFIG.materials.side.metalness,
-      roughness: CONFIG.materials.side.roughness,
-      clearcoat: CONFIG.materials.side.clearcoat,
-      clearcoatRoughness: CONFIG.materials.side.clearcoatRoughness,
-      side: THREE.DoubleSide
-    })
+    face: createPhysicalMaterial(faceConfig, colors.face, colors.faceEmissive),
+    side: createPhysicalMaterial(sideConfig, colors.side, colors.sideEmissive)
   };
 }
 
@@ -1139,6 +1368,9 @@ function createSvgMaterialPairCache() {
           faceEmissive: `#${palette.faceEmissive}`,
           side: `#${palette.side}`,
           sideEmissive: `#${palette.sideEmissive}`
+        }, {
+          face: { surfacePattern: null },
+          side: { surfacePattern: null }
         })
       );
     }
@@ -1391,13 +1623,73 @@ function addStageElements() {
     parts.shieldPanelEdge = edgeGlow;
   }
 
+  if (CONFIG.stadiumBeams.enabled) {
+    const beamTexture = createLightColumnTexture();
+    const beamGroup = new THREE.Group();
+
+    const createBeamPlane = (width, height, color, opacity) =>
+      new THREE.Mesh(
+        new THREE.PlaneGeometry(width, height),
+        new THREE.MeshBasicMaterial({
+          map: beamTexture,
+          color: new THREE.Color(color),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          opacity,
+          side: THREE.DoubleSide
+        })
+      );
+
+    const fanAngles = [-0.62, -0.31, 0, 0.31, 0.62];
+    const beamPlanes = [];
+
+    for (const angle of fanAngles) {
+      const plane = createBeamPlane(
+        CONFIG.stadiumBeams.width,
+        CONFIG.stadiumBeams.height,
+        CONFIG.stadiumBeams.color,
+        CONFIG.stadiumBeams.opacity
+      );
+      plane.position.x = Math.sin(angle) * CONFIG.stadiumBeams.spread;
+      plane.position.y = Math.abs(Math.sin(angle)) * 0.18;
+      plane.rotation.z = angle * 0.22;
+      plane.rotation.y = angle;
+      beamGroup.add(plane);
+      beamPlanes.push(plane);
+    }
+
+    const coreBeam = createBeamPlane(
+      CONFIG.stadiumBeams.width * 0.5,
+      CONFIG.stadiumBeams.height * 0.9,
+      CONFIG.stadiumBeams.coreColor,
+      CONFIG.stadiumBeams.coreOpacity
+    );
+    beamGroup.add(coreBeam);
+    beamGroup.position.set(0, CONFIG.stadiumBeams.y, CONFIG.stadiumBeams.z);
+    stageRig.add(beamGroup);
+
+    parts.stadiumBeamGroup = beamGroup;
+    parts.stadiumBeamPlanes = beamPlanes;
+    parts.stadiumBeamCore = coreBeam;
+  }
+
   return Object.keys(parts).length > 0 ? parts : null;
 }
 
 async function buildLogoGroup(svgData, colorState) {
   const logoGroup = new THREE.Group();
+  const solidMaterials = new Set();
+  const pathPalette =
+    colorState.colorMode === 'preset' &&
+    Array.isArray(CONFIG.materials.pathPalette) &&
+    CONFIG.materials.pathPalette.length > 0
+      ? CONFIG.materials.pathPalette
+      : null;
+  const pathPaletteMode = CONFIG.materials.pathPaletteMode || 'cycle';
+  const pathPaletteCache = new Map();
   const sharedMaterials =
-    colorState.colorMode === 'original-svg'
+    colorState.colorMode === 'original-svg' || pathPalette
       ? null
       : createMaterialPair({
           face: CONFIG.materials.face.color,
@@ -1407,7 +1699,36 @@ async function buildLogoGroup(svgData, colorState) {
         });
   const getSvgMaterials = createSvgMaterialPairCache();
 
-  for (const pathData of svgData.paths) {
+  const getPathPaletteMaterials = (pathIndex) => {
+    if (!pathPalette) {
+      return sharedMaterials;
+    }
+
+    const paletteIndex =
+      pathPaletteMode === 'single'
+        ? 0
+        : Math.abs(pathIndex) % pathPalette.length;
+
+    if (!pathPaletteCache.has(paletteIndex)) {
+      const entry = pathPalette[paletteIndex];
+      const resolvedEntry = typeof entry === 'string' ? { face: entry } : (entry || {});
+      pathPaletteCache.set(
+        paletteIndex,
+        createMaterialPair({
+          face: resolvedEntry.face || resolvedEntry.color || CONFIG.materials.face.color,
+          faceEmissive:
+            resolvedEntry.faceEmissive || resolvedEntry.emissive || CONFIG.materials.face.emissive,
+          side: resolvedEntry.side || CONFIG.materials.side.color,
+          sideEmissive: resolvedEntry.sideEmissive || CONFIG.materials.side.emissive
+        })
+      );
+    }
+
+    return pathPaletteCache.get(paletteIndex);
+  };
+
+  for (let pathIndex = 0; pathIndex < svgData.paths.length; pathIndex += 1) {
+    const pathData = svgData.paths[pathIndex];
     const shapes = SVGLoader.createShapes(pathData);
 
     if (shapes.length === 0) {
@@ -1417,7 +1738,7 @@ async function buildLogoGroup(svgData, colorState) {
     const materials =
       colorState.colorMode === 'original-svg'
         ? getSvgMaterials(pathData.color.getHexString())
-        : sharedMaterials;
+        : getPathPaletteMaterials(pathIndex);
 
     for (const shape of shapes) {
       const geometry = new THREE.ExtrudeGeometry(shape, {
@@ -1435,6 +1756,8 @@ async function buildLogoGroup(svgData, colorState) {
 
       const mesh = new THREE.Mesh(geometry, [materials.face, materials.side]);
       logoGroup.add(mesh);
+      solidMaterials.add(materials.face);
+      solidMaterials.add(materials.side);
     }
   }
 
@@ -1455,28 +1778,180 @@ async function buildLogoGroup(svgData, colorState) {
       (size.y * scale) + CONFIG.materials.frame.paddingY,
       CONFIG.materials.frame.depth
     );
-    const frameMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(CONFIG.materials.frame.color),
-      emissive: new THREE.Color(CONFIG.materials.frame.emissive),
-      emissiveIntensity: CONFIG.materials.frame.emissiveIntensity,
-      transparent: CONFIG.materials.frame.transparent ?? true,
-      opacity: CONFIG.materials.frame.opacity,
-      depthWrite: CONFIG.materials.frame.depthWrite ?? false,
-      roughness: CONFIG.materials.frame.roughness,
-      metalness: CONFIG.materials.frame.metalness,
-      clearcoat: CONFIG.materials.frame.clearcoat,
-      clearcoatRoughness: CONFIG.materials.frame.clearcoatRoughness,
-      side: THREE.DoubleSide
-    });
+    const frameMaterial = createPhysicalMaterial(
+      {
+        ...CONFIG.materials.frame,
+        depthWrite: CONFIG.materials.frame.depthWrite ?? false
+      },
+      CONFIG.materials.frame.color,
+      CONFIG.materials.frame.emissive
+    );
+    frameMaterial.depthWrite = CONFIG.materials.frame.depthWrite ?? false;
     const frame = new THREE.Mesh(frameGeometry, frameMaterial);
     frame.position.z = CONFIG.materials.frame.z;
     group.add(frame);
   }
 
+  const sequenceMode = CONFIG.sequence?.mode || 'none';
+
+  if (sequenceMode !== 'none') {
+    for (const material of solidMaterials) {
+      material.transparent = true;
+      material.opacity = material.opacity ?? 1;
+    }
+  }
+
   group.add(logoGroup);
   group.position.y = CONFIG.camera.lookAt[1];
 
-  return group;
+  return {
+    group,
+    logoGroup,
+    solidMaterials: Array.from(solidMaterials),
+    scaledSize: {
+      x: size.x * scale,
+      y: size.y * scale
+    }
+  };
+}
+
+function addLogoEffects(logoBundle) {
+  const parts = {};
+
+  if (CONFIG.backplate.enabled) {
+    const backplate = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        logoBundle.scaledSize.x + CONFIG.backplate.widthPadding,
+        logoBundle.scaledSize.y + CONFIG.backplate.heightPadding,
+        CONFIG.backplate.depth
+      ),
+      createPhysicalMaterial(
+        {
+          ...CONFIG.backplate,
+          surfacePattern: CONFIG.backplate.pattern
+        },
+        CONFIG.backplate.color,
+        CONFIG.backplate.emissive
+      )
+    );
+    backplate.position.z = CONFIG.backplate.z;
+    logoBundle.group.add(backplate);
+    parts.backplate = backplate;
+  }
+
+  if (CONFIG.logoOutline.enabled) {
+    const outlineGroup = new THREE.Group();
+    const outlineMaterials = [];
+    const buildOutlineLayer = (color, opacity, scaleMultiplier = 1) => {
+      if (!color || !opacity || opacity <= 0) {
+        return;
+      }
+
+      logoBundle.logoGroup.traverse((node) => {
+        if (!node.isMesh) {
+          return;
+        }
+
+        const edgeGeometry = new THREE.EdgesGeometry(node.geometry, 20);
+        const lineMaterial = new THREE.LineBasicMaterial({
+          color: new THREE.Color(color),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          opacity
+        });
+        lineMaterial.userData.baseOpacity = opacity;
+        const line = new THREE.LineSegments(edgeGeometry, lineMaterial);
+        line.position.copy(node.position);
+        line.rotation.copy(node.rotation);
+        line.scale.copy(node.scale).multiplyScalar(scaleMultiplier);
+        line.renderOrder = 6;
+        outlineGroup.add(line);
+        outlineMaterials.push(lineMaterial);
+      });
+    };
+
+    buildOutlineLayer(CONFIG.logoOutline.color, CONFIG.logoOutline.opacity, CONFIG.logoOutline.thickness || 1);
+    buildOutlineLayer(
+      CONFIG.logoOutline.secondaryColor,
+      CONFIG.logoOutline.secondaryOpacity,
+      (CONFIG.logoOutline.thickness || 1) * 1.02
+    );
+
+    outlineGroup.position.z = CONFIG.logoOutline.zOffset ?? 0.05;
+    logoBundle.group.add(outlineGroup);
+    parts.outlineGroup = outlineGroup;
+    parts.outlineMaterials = outlineMaterials;
+  }
+
+  if (CONFIG.sweepLight.enabled) {
+    const sweep = new THREE.Mesh(
+      new THREE.PlaneGeometry(CONFIG.sweepLight.width, CONFIG.sweepLight.height),
+      new THREE.MeshBasicMaterial({
+        map: createSweepTexture(),
+        color: new THREE.Color(CONFIG.sweepLight.color),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        opacity: CONFIG.sweepLight.opacity,
+        side: THREE.DoubleSide
+      })
+    );
+    sweep.material.userData.baseOpacity = CONFIG.sweepLight.opacity;
+    sweep.rotation.z = CONFIG.sweepLight.angle;
+    sweep.position.z = CONFIG.sweepLight.z;
+    logoBundle.group.add(sweep);
+    parts.sweep = sweep;
+  }
+
+  if (CONFIG.sequence?.mode === 'wireframe-reveal') {
+    const wireGroup = new THREE.Group();
+    const wireMaterials = [];
+
+    logoBundle.logoGroup.traverse((node) => {
+      if (!node.isMesh) {
+        return;
+      }
+
+      const wireGeometry = new THREE.WireframeGeometry(node.geometry);
+      const wireMaterial = new THREE.LineBasicMaterial({
+        color: new THREE.Color(CONFIG.sequence.wireColor || '#8ef4ff'),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        opacity: CONFIG.sequence.wireOpacity ?? 0.9
+      });
+      wireMaterial.userData.baseOpacity = CONFIG.sequence.wireOpacity ?? 0.9;
+      const wire = new THREE.LineSegments(wireGeometry, wireMaterial);
+      wire.position.copy(node.position);
+      wire.rotation.copy(node.rotation);
+      wire.scale.copy(node.scale);
+      wire.renderOrder = 8;
+      wireGroup.add(wire);
+      wireMaterials.push(wireMaterial);
+    });
+
+    wireGroup.position.z = (CONFIG.logoOutline?.zOffset ?? 0.05) + 0.02;
+    logoBundle.group.add(wireGroup);
+    parts.sequenceWireGroup = wireGroup;
+    parts.sequenceWireMaterials = wireMaterials;
+  }
+
+  if (CONFIG.sequence?.mode && CONFIG.sequence.mode !== 'none') {
+    sequenceMaterialState = {
+      mode: CONFIG.sequence.mode,
+      materialState: logoBundle.solidMaterials.map((material) => ({
+        material,
+        baseOpacity: material.opacity ?? 1,
+        baseEmissiveIntensity: material.emissiveIntensity ?? 0,
+        baseRoughness: material.roughness ?? 0.5
+      }))
+    };
+  } else {
+    sequenceMaterialState = null;
+  }
+
+  return Object.keys(parts).length > 0 ? parts : null;
 }
 
 function frameScene() {
@@ -1561,6 +2036,7 @@ function setProgress(progress) {
   logoRig.rotation.y = angle;
   logoRig.rotation.z = drift * CONFIG.animation.driftRoll;
   logoRig.position.y = drift * CONFIG.animation.driftY;
+  logoRig.scale.setScalar(1);
 
   camera.position.x = CONFIG.camera.position[0] + Math.sin(angle) * CONFIG.camera.orbitXAmplitude;
   camera.position.y = CONFIG.camera.position[1] + Math.cos(angle * 2) * CONFIG.camera.orbitYAmplitude;
@@ -1643,6 +2119,114 @@ function setProgress(progress) {
     stageParts.shieldPanelSlab.material.opacity = opacity;
     stageParts.shieldPanelEdge.material.opacity = edgeOpacity;
     stageParts.shieldPanelGroup.scale.set(scale, scale, 1);
+  }
+
+  if (stageParts?.stadiumBeamGroup) {
+    const opacity =
+      (CONFIG.stadiumBeams.opacity - CONFIG.stadiumBeams.pulseAmplitude / 2) +
+      shimmer * CONFIG.stadiumBeams.pulseAmplitude;
+    const coreOpacity =
+      (CONFIG.stadiumBeams.coreOpacity - CONFIG.stadiumBeams.pulseAmplitude / 3) +
+      shimmer * (CONFIG.stadiumBeams.pulseAmplitude * 0.66);
+    const scale =
+      1 - (CONFIG.stadiumBeams.scalePulse / 2) + shimmer * CONFIG.stadiumBeams.scalePulse;
+
+    for (const plane of stageParts.stadiumBeamPlanes) {
+      plane.material.opacity = opacity;
+    }
+
+    stageParts.stadiumBeamCore.material.opacity = coreOpacity;
+    stageParts.stadiumBeamGroup.scale.set(scale, scale, 1);
+    stageParts.stadiumBeamGroup.rotation.y = angle * 0.03;
+  }
+
+  if (logoLayerParts?.outlineGroup) {
+    const pulseAmplitude = CONFIG.logoOutline.pulseAmplitude ?? 0;
+    const pulseScale = 1 - (pulseAmplitude / 2) + (shimmer * pulseAmplitude);
+    logoLayerParts.outlineGroup.rotation.z = angle * (CONFIG.logoOutline.rotationFactor ?? 0);
+
+    for (const material of logoLayerParts.outlineMaterials || []) {
+      const baseOpacity = material.userData.baseOpacity ?? material.opacity;
+      material.opacity = clamp(baseOpacity * pulseScale, 0, 1);
+    }
+  }
+
+  if (logoLayerParts?.sweep) {
+    const sweepSpeed = CONFIG.sweepLight.speed ?? 1;
+    const sweepRange = CONFIG.sweepLight.range ?? 6;
+    logoLayerParts.sweep.position.x = Math.sin(angle * sweepSpeed) * sweepRange;
+    const baseOpacity = logoLayerParts.sweep.material.userData.baseOpacity ?? CONFIG.sweepLight.opacity;
+    logoLayerParts.sweep.material.opacity = clamp(baseOpacity * (0.74 + (shimmer * 0.52)), 0, 1);
+  }
+
+  if (sequenceMaterialState) {
+    const sequenceConfig = CONFIG.sequence || {};
+    const revealStart = sequenceConfig.revealStart ?? 0;
+    const revealEnd = sequenceConfig.revealEnd ?? 0.7;
+    const settleEnd = sequenceConfig.settleEnd ?? 0.95;
+    const revealPhase = smoothstep(revealStart, revealEnd, wrapped);
+    const settlePhase = smoothstep(revealEnd, settleEnd, wrapped);
+
+    if (sequenceMaterialState.mode === 'wireframe-reveal') {
+      const emissiveBoost = sequenceConfig.emissiveBoost ?? 0.3;
+      const scaleStart = sequenceConfig.scaleStart ?? 0.9;
+      const opacityPhase = lerp(0.12, 1, revealPhase);
+      const settledOpacity = lerp(opacityPhase, 1, settlePhase);
+      const settledScale = lerp(lerp(scaleStart, 1, revealPhase), 1, settlePhase);
+      logoRig.scale.setScalar(settledScale);
+
+      for (const state of sequenceMaterialState.materialState) {
+        state.material.opacity = clamp(state.baseOpacity * settledOpacity, 0, 1);
+        state.material.emissiveIntensity =
+          state.baseEmissiveIntensity * lerp(1 + emissiveBoost, 1, settlePhase);
+        state.material.roughness = state.baseRoughness;
+      }
+
+      if (logoLayerParts?.sequenceWireMaterials) {
+        for (const material of logoLayerParts.sequenceWireMaterials) {
+          const baseOpacity = material.userData.baseOpacity ?? (sequenceConfig.wireOpacity ?? 0.9);
+          const fading = lerp(baseOpacity, baseOpacity * 0.1, revealPhase);
+          material.opacity = clamp(fading * (1 - settlePhase), 0, 1);
+        }
+      }
+    } else if (sequenceMaterialState.mode === 'molten-formation') {
+      const emissiveBoost = sequenceConfig.emissiveBoost ?? 0.8;
+      const roughnessBoost = sequenceConfig.roughnessBoost ?? 0.2;
+      const scaleStart = sequenceConfig.scaleStart ?? 0.92;
+      const glowBoost = sequenceConfig.glowBoost ?? 0;
+      const settle = smoothstep(revealStart, settleEnd, wrapped);
+      const heat = 1 - settle;
+      logoRig.scale.setScalar(lerp(scaleStart, 1, settle));
+
+      for (const state of sequenceMaterialState.materialState) {
+        state.material.opacity = clamp(state.baseOpacity * lerp(0.82, 1, settle), 0, 1);
+        state.material.emissiveIntensity =
+          state.baseEmissiveIntensity * (1 + (heat * emissiveBoost) + (shimmer * 0.14));
+        state.material.roughness = clamp(
+          state.baseRoughness + (heat * roughnessBoost) - (shimmer * 0.03),
+          0,
+          1
+        );
+      }
+
+      if (glowParts && glowBoost > 0) {
+        glowParts.halo.material.opacity = clamp(
+          glowParts.halo.material.opacity * (1 + (heat * glowBoost)),
+          0,
+          1
+        );
+        glowParts.innerHalo.material.opacity = clamp(
+          glowParts.innerHalo.material.opacity * (1 + (heat * glowBoost)),
+          0,
+          1
+        );
+        glowParts.beam.material.opacity = clamp(
+          glowParts.beam.material.opacity * (1 + (heat * glowBoost)),
+          0,
+          1
+        );
+      }
+    }
   }
 
   frameScene();
@@ -1758,8 +2342,9 @@ async function init() {
   mountViewerUi();
   void refreshPresetAssetButtons();
 
-  const logo = await buildLogoGroup(svgData, activeColorState);
-  logoRig.add(logo);
+  const logoBundle = await buildLogoGroup(svgData, activeColorState);
+  logoRig.add(logoBundle.group);
+  logoLayerParts = addLogoEffects(logoBundle);
   resetView();
   setCurrentViewButtonsReady();
 

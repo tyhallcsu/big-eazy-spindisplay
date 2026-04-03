@@ -221,6 +221,8 @@ Display concept family sample:
 
 ### Presets
 
+Existing preset families remain available and unchanged (`spindisplay-loop`, `premium-turntable`, `hero-still`, `proof-pack`, and prior concept/deployable families).
+
 - `spindisplay-loop`: black-background looping turntable for hologram-fan style playback
 - `premium-turntable`: polished studio-style spin
 - `hero-still`: front-facing still for README/client preview use
@@ -232,6 +234,30 @@ Display concept family sample:
 - `signal-beacon`: cyan/white deployable hologram look with a controlled vertical beacon behind the mark
 - `glass-panel-hologram`: acrylic-shield hologram treatment with a subtle panel and restrained halo
 - `amber-marquee`: warm amber deployable look with stronger readability than the heavy gold emblem concept
+
+### New Big Eazy Style Families
+
+All 10 new families are configured with the full concept output bundle (`preview.png`, `asset.glb`, `master.mp4`, `preview.gif`, `contact-sheet.png`, `ffprobe.json`).
+
+- `casino-neon-sign` (`display-safe`, `display_safe: true`): Bourbon/Vegas neon-sign energy with bright emissive contouring and dark tube interiors.
+- `trophy-emblem` (`display-safe`, `display_safe: true`): heavy championship gold with thick bevels, dark backing, and minimal glow clutter.
+- `crystal-glass-luxury` (`cinematic`, `display_safe: false`): translucent crystal/glass treatment with cyan-violet rim lighting and refined motion.
+- `mardi-gras-royal-crest` (`display-safe`, `display_safe: true`): regal purple/green/gold crest direction with enamel-like material separation.
+- `retro-chrome-nightlife` (`exploration`, `display_safe: false`): mirrored chrome + magenta/green nightlife accents with animated shine sweeps.
+- `wireframe-reveal` (`cinematic`, `display_safe: false`): staged blueprint/wireframe-to-solid reveal sequence.
+- `molten-gold-formation` (`cinematic`, `display_safe: false`): heated gold formation animation that settles into a premium finished logo.
+- `led-nightclub-panel` (`display-safe`, `display_safe: true`): dense LED matrix/panel logic tuned for high fan-display readability.
+- `stadium-hero` (`cinematic`, `display_safe: false`): arena-scale hero reveal with controlled beam framing and premium gold massing.
+- `art-deco-plaque` (`exploration`, `display_safe: false`): brushed brass + black art-deco plaque treatment with restrained movement.
+
+### Recommended Presets For Real Single-Fan Deployment
+
+- `casino-neon-sign`
+- `trophy-emblem`
+- `mardi-gras-royal-crest`
+- `led-nightclub-panel`
+- `spinning-3d-emblem`
+- `midnight-emboss`
 
 ### Color Modes
 
@@ -462,10 +488,32 @@ npm run build:concept -- --logo big-eazy --variant display --preset spinning-3d-
 npm run build:concept -- --logo big-eazy --variant display --preset futuristic-projection
 ```
 
+Build one of the new Big Eazy style families:
+
+```bash
+npm run build:logo -- --logo big-eazy --variant display --preset casino-neon-sign
+npm run build:logo -- --logo big-eazy --variant display --preset trophy-emblem
+npm run build:logo -- --logo big-eazy --variant display --preset crystal-glass-luxury
+npm run build:logo -- --logo big-eazy --variant display --preset mardi-gras-royal-crest
+npm run build:logo -- --logo big-eazy --variant display --preset retro-chrome-nightlife
+npm run build:logo -- --logo big-eazy --variant display --preset wireframe-reveal
+npm run build:logo -- --logo big-eazy --variant display --preset molten-gold-formation
+npm run build:logo -- --logo big-eazy --variant display --preset led-nightclub-panel
+npm run build:logo -- --logo big-eazy --variant display --preset stadium-hero
+npm run build:logo -- --logo big-eazy --variant display --preset art-deco-plaque
+```
+
 Build the full Big Eazy concept batch:
 
 ```bash
 npm run build:all-concepts
+```
+
+Build the full new style-family batch:
+
+```bash
+npm run build:new-style-families
+npm run build:concept -- --job-set big-eazy-new-style-families
 ```
 
 Build the shared deployable preset batch for all `display` variants:
@@ -545,7 +593,10 @@ The viewer stores color choices in the URL via `colorMode` and `primaryColor`, s
 Add or tune future looks in [scripts/render-manifest.mjs](scripts/render-manifest.mjs):
 
 - define a new preset under `presetDefinitions`
+- add style metadata (`category`, `display_safe`, `style_family`, `notes`) so filtering and deployment choices stay explicit
 - decide whether the preset should enable `baseHalo`, `projectionPlate`, `lightColumn`, or `shieldPanel`
+- optionally use extended style controls when needed (`logoOutline`, `backplate`, `sweepLight`, `stadiumBeams`, `sequence`)
+- keep source SVG geometry clean/extrusion-friendly and push styling into preset/material/render logic
 - decide whether the preset should export a variant-level or preset-level GLB
 - add any reusable job batch under `jobSets`
 - keep new effects compatible with the existing viewer config shape before extending [viewer/app.js](viewer/app.js)

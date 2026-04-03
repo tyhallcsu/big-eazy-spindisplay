@@ -363,6 +363,21 @@ export const sceneDefaults = {
   shieldPanel: {
     enabled: false
   },
+  logoOutline: {
+    enabled: false
+  },
+  backplate: {
+    enabled: false
+  },
+  sweepLight: {
+    enabled: false
+  },
+  stadiumBeams: {
+    enabled: false
+  },
+  sequence: {
+    mode: 'none'
+  },
   camera: {
     fov: 30,
     position: [0, 0.35, 12.8],
@@ -1079,6 +1094,1212 @@ export const presetDefinitions = {
         }
       }
     }
+  },
+  'casino-neon-sign': {
+    label: 'Casino Neon Sign',
+    category: 'display-safe',
+    display_safe: true,
+    style_family: 'neon-signage',
+    notes: 'Tube-neon signage vibe with bright edge energy and dark interior fill.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.8,
+      camera: {
+        position: [0, 0.28, 13.25],
+        lookAt: [0, 0.17, 0],
+        orbitXAmplitude: 0.065,
+        orbitYAmplitude: 0.022,
+        orbitZAmplitude: 0.032
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.08,
+        turns: 1,
+        tiltX: 0.2,
+        driftY: 0.016,
+        driftRoll: 0.01
+      },
+      extrusionDepth: 26,
+      bevelThickness: 2.8,
+      bevelSize: 1.65,
+      bevelSegments: 5,
+      glow: {
+        enabled: true,
+        haloColor: '#63ff8f',
+        innerColor: '#ff4fb9',
+        beamColor: '#ffc75f',
+        haloOpacity: 0.48,
+        innerOpacity: 0.36,
+        beamOpacity: 0.13,
+        haloScale: 10.8,
+        innerScale: 7.2,
+        beamWidth: 2.2,
+        beamHeight: 9.4,
+        haloPosition: [0, 0.16, -1.55],
+        innerPosition: [0, 0.13, -0.98],
+        beamPosition: [0, 0.05, -1.9],
+        pulseAmplitude: 0.16,
+        innerPulseAmplitude: 0.12,
+        beamPulseAmplitude: 0.05,
+        rotationFactor: -0.22
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#58ff97',
+        opacity: 0.16,
+        width: 5.3,
+        depth: 2.9,
+        y: -1.3,
+        z: 0,
+        pulseAmplitude: 0.06,
+        scalePulse: 0.08
+      },
+      materials: {
+        face: {
+          color: '#1c0d13',
+          emissive: '#ff53b8',
+          emissiveIntensity: 0.62,
+          metalness: 0.14,
+          roughness: 0.45,
+          clearcoat: 0.76,
+          clearcoatRoughness: 0.23,
+          reflectivity: 0.42
+        },
+        side: {
+          color: '#28190e',
+          emissive: '#ffbf59',
+          emissiveIntensity: 0.42,
+          metalness: 0.16,
+          roughness: 0.52,
+          clearcoat: 0.58,
+          clearcoatRoughness: 0.28
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      logoOutline: {
+        enabled: true,
+        color: '#61ff8b',
+        secondaryColor: '#ff4fb9',
+        opacity: 0.68,
+        secondaryOpacity: 0.34,
+        thickness: 1.06,
+        pulseAmplitude: 0.16,
+        rotationFactor: -0.12,
+        zOffset: 0.06
+      },
+      lighting: {
+        ambientSky: '#f2deff',
+        ambientGround: '#050205',
+        ambientIntensity: 1.05,
+        keyColor: '#fff0cf',
+        keyIntensity: 2.4,
+        keyPosition: [5.2, 4.8, 7.0],
+        rimColor: '#6dffab',
+        rimIntensity: 2.0,
+        rimPosition: [-5.2, 1.7, -4.1],
+        lowerColor: '#ff4ab0',
+        lowerIntensity: 7.2,
+        lowerDistance: 19,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 4.2]
+      }
+    }
+  },
+  'trophy-emblem': {
+    label: 'Trophy Emblem',
+    category: 'display-safe',
+    display_safe: true,
+    style_family: 'championship-metal',
+    notes: 'Heavy gold championship object with dark enamel backing and restrained motion.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#040200',
+      ...createGoldPalette(),
+      logoSize: 5.74,
+      camera: {
+        position: [0, 0.18, 13.65],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.032,
+        orbitYAmplitude: 0.01,
+        orbitZAmplitude: 0.016
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.11,
+        turns: 1,
+        tiltX: 0.14,
+        driftY: 0.004,
+        driftRoll: 0.004
+      },
+      extrusionDepth: 64,
+      bevelThickness: 10.8,
+      bevelSize: 5.9,
+      bevelSegments: 8,
+      glow: {
+        enabled: false
+      },
+      baseHalo: {
+        enabled: false
+      },
+      projectionPlate: {
+        enabled: false
+      },
+      lightColumn: {
+        enabled: false
+      },
+      shieldPanel: {
+        enabled: false
+      },
+      materials: {
+        face: {
+          color: '#f6d995',
+          emissive: '#7f5114',
+          emissiveIntensity: 0.16,
+          metalness: 1,
+          roughness: 0.1,
+          clearcoat: 1,
+          clearcoatRoughness: 0.03,
+          reflectivity: 0.98,
+          surfacePattern: {
+            mode: 'brushed-metal',
+            strength: 0.42
+          }
+        },
+        side: {
+          color: '#885a1b',
+          emissive: '#4f310c',
+          emissiveIntensity: 0.06,
+          metalness: 0.94,
+          roughness: 0.24,
+          clearcoat: 0.86,
+          clearcoatRoughness: 0.13
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      backplate: {
+        enabled: true,
+        color: '#1f1304',
+        emissive: '#2a1b06',
+        emissiveIntensity: 0.05,
+        metalness: 0.72,
+        roughness: 0.36,
+        clearcoat: 0.64,
+        clearcoatRoughness: 0.23,
+        opacity: 0.98,
+        transparent: false,
+        widthPadding: 0.86,
+        heightPadding: 0.62,
+        depth: 0.28,
+        z: -0.82
+      },
+      lighting: {
+        ambientSky: '#fff1d2',
+        ambientGround: '#0f0901',
+        ambientIntensity: 0.92,
+        keyColor: '#fff0c7',
+        keyIntensity: 4.2,
+        keyPosition: [5.9, 5.3, 7.9],
+        rimColor: '#f2ca75',
+        rimIntensity: 2.5,
+        rimPosition: [-5.2, 1.8, -4.0],
+        lowerColor: '#9f6e22',
+        lowerIntensity: 6.4,
+        lowerDistance: 17,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 3.9]
+      }
+    }
+  },
+  'crystal-glass-luxury': {
+    label: 'Crystal Glass Luxury',
+    category: 'cinematic',
+    display_safe: false,
+    style_family: 'glass-luxury',
+    notes: 'Translucent crystal-like logo with cyan/violet rim light and refined movement.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#01020a',
+      logoSize: 5.62,
+      camera: {
+        position: [0, 0.26, 13.5],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.05,
+        orbitYAmplitude: 0.018,
+        orbitZAmplitude: 0.025
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.09,
+        turns: 1,
+        tiltX: 0.18,
+        driftY: 0.01,
+        driftRoll: 0.008
+      },
+      extrusionDepth: 34,
+      bevelThickness: 3.9,
+      bevelSize: 2.5,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#95eeff',
+        innerColor: '#b89bff',
+        beamColor: '#80d8ff',
+        haloOpacity: 0.2,
+        innerOpacity: 0.12,
+        beamOpacity: 0.05,
+        haloScale: 9.6,
+        innerScale: 6.9,
+        beamWidth: 2.0,
+        beamHeight: 8.9,
+        haloPosition: [0, 0.14, -1.62],
+        innerPosition: [0, 0.1, -1.02],
+        beamPosition: [0, 0.03, -1.86],
+        pulseAmplitude: 0.04,
+        innerPulseAmplitude: 0.03,
+        beamPulseAmplitude: 0.02,
+        rotationFactor: -0.08
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#91dcff',
+        opacity: 0.08,
+        width: 5.0,
+        depth: 2.8,
+        y: -1.28,
+        z: 0,
+        pulseAmplitude: 0.02,
+        scalePulse: 0.03
+      },
+      shieldPanel: {
+        enabled: true,
+        color: '#a4dbff',
+        edgeColor: '#c39fff',
+        opacity: 0.06,
+        edgeOpacity: 0.14,
+        width: 5.9,
+        height: 7.35,
+        thickness: 0.12,
+        y: 0.17,
+        z: -0.7,
+        pulseAmplitude: 0.015,
+        scalePulse: 0.02
+      },
+      materials: {
+        face: {
+          color: '#b9ebff',
+          emissive: '#80cbff',
+          emissiveIntensity: 0.22,
+          metalness: 0.04,
+          roughness: 0.08,
+          clearcoat: 1,
+          clearcoatRoughness: 0.03,
+          reflectivity: 0.92,
+          transmission: 0.88,
+          thickness: 1.05,
+          ior: 1.33,
+          transparent: true,
+          opacity: 0.72,
+          attenuationColor: '#7cc9ff',
+          attenuationDistance: 1.9
+        },
+        side: {
+          color: '#6aa6cc',
+          emissive: '#4fa6d8',
+          emissiveIntensity: 0.14,
+          metalness: 0.08,
+          roughness: 0.2,
+          clearcoat: 0.96,
+          clearcoatRoughness: 0.06,
+          transmission: 0.74,
+          thickness: 0.9,
+          ior: 1.31,
+          transparent: true,
+          opacity: 0.66,
+          attenuationColor: '#5fb6e0',
+          attenuationDistance: 1.6
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      logoOutline: {
+        enabled: true,
+        color: '#9deeff',
+        secondaryColor: '#bda4ff',
+        opacity: 0.22,
+        secondaryOpacity: 0.14,
+        thickness: 0.92,
+        pulseAmplitude: 0.03,
+        rotationFactor: -0.03,
+        zOffset: 0.05
+      },
+      sweepLight: {
+        enabled: true,
+        color: '#d3c1ff',
+        opacity: 0.05,
+        width: 2.4,
+        height: 9.0,
+        z: 0.86,
+        angle: 0.26,
+        range: 5.6,
+        speed: 0.4
+      },
+      lighting: {
+        ambientSky: '#f4f6ff',
+        ambientGround: '#05060d',
+        ambientIntensity: 1.06,
+        keyColor: '#d9f2ff',
+        keyIntensity: 2.05,
+        keyPosition: [4.8, 4.9, 7.2],
+        rimColor: '#ccacff',
+        rimIntensity: 1.74,
+        rimPosition: [-5.4, 1.6, -4.4],
+        lowerColor: '#7ca7d8',
+        lowerIntensity: 4.4,
+        lowerDistance: 18,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 4.2]
+      }
+    }
+  },
+  'mardi-gras-royal-crest': {
+    label: 'Mardi Gras Royal Crest',
+    category: 'display-safe',
+    display_safe: true,
+    style_family: 'royal-crest',
+    notes: 'Regal purple/green/gold crest treatment with enamel-like segmentation and metal trim.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#030104',
+      logoSize: 5.72,
+      camera: {
+        position: [0, 0.22, 13.5],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.05,
+        orbitYAmplitude: 0.018,
+        orbitZAmplitude: 0.022
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.1,
+        turns: 1,
+        tiltX: 0.16,
+        driftY: 0.01,
+        driftRoll: 0.006
+      },
+      extrusionDepth: 52,
+      bevelThickness: 7.1,
+      bevelSize: 4.4,
+      bevelSegments: 7,
+      glow: {
+        enabled: true,
+        haloColor: '#d0a7ff',
+        innerColor: '#5ed298',
+        beamColor: '#f4c66a',
+        haloOpacity: 0.12,
+        innerOpacity: 0.08,
+        beamOpacity: 0.03,
+        haloScale: 9.0,
+        innerScale: 6.4,
+        beamWidth: 1.9,
+        beamHeight: 8.6,
+        haloPosition: [0, 0.12, -1.6],
+        innerPosition: [0, 0.1, -1.0],
+        beamPosition: [0, 0.04, -1.85],
+        pulseAmplitude: 0.03,
+        innerPulseAmplitude: 0.02,
+        beamPulseAmplitude: 0.01,
+        rotationFactor: -0.04
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#5fcf96',
+        opacity: 0.06,
+        width: 5.05,
+        depth: 2.7,
+        y: -1.28,
+        z: 0,
+        pulseAmplitude: 0.015,
+        scalePulse: 0.02
+      },
+      materials: {
+        face: {
+          color: '#d7af58',
+          emissive: '#744e14',
+          emissiveIntensity: 0.2,
+          metalness: 0.86,
+          roughness: 0.18,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          reflectivity: 0.9
+        },
+        side: {
+          color: '#2d1b11',
+          emissive: '#1b0f08',
+          emissiveIntensity: 0.08,
+          metalness: 0.66,
+          roughness: 0.34,
+          clearcoat: 0.74,
+          clearcoatRoughness: 0.19
+        },
+        frame: {
+          enabled: false
+        },
+        pathPalette: [
+          {
+            face: '#60329c',
+            faceEmissive: '#2e1257'
+          },
+          {
+            face: '#1f8f61',
+            faceEmissive: '#0a4d35'
+          },
+          {
+            face: '#dab054',
+            faceEmissive: '#7c5315'
+          },
+          {
+            face: '#3d275f',
+            faceEmissive: '#1a1033'
+          }
+        ],
+        pathPaletteMode: 'cycle'
+      },
+      backplate: {
+        enabled: true,
+        color: '#140b1f',
+        emissive: '#201030',
+        emissiveIntensity: 0.06,
+        metalness: 0.52,
+        roughness: 0.42,
+        clearcoat: 0.66,
+        clearcoatRoughness: 0.2,
+        opacity: 0.96,
+        transparent: false,
+        widthPadding: 1.02,
+        heightPadding: 0.74,
+        depth: 0.24,
+        z: -0.78
+      },
+      logoOutline: {
+        enabled: true,
+        color: '#f0ce77',
+        secondaryColor: '#5ed298',
+        opacity: 0.22,
+        secondaryOpacity: 0.16,
+        thickness: 0.95,
+        pulseAmplitude: 0.03,
+        rotationFactor: -0.03,
+        zOffset: 0.05
+      },
+      lighting: {
+        ambientSky: '#f3e7ff',
+        ambientGround: '#08030f',
+        ambientIntensity: 0.95,
+        keyColor: '#ffeec4',
+        keyIntensity: 2.75,
+        keyPosition: [5.6, 5.0, 7.4],
+        rimColor: '#c9a4ff',
+        rimIntensity: 1.75,
+        rimPosition: [-5.2, 1.7, -4.3],
+        lowerColor: '#41ad7f',
+        lowerIntensity: 5.1,
+        lowerDistance: 17,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 4.0]
+      }
+    }
+  },
+  'retro-chrome-nightlife': {
+    label: 'Retro Chrome Nightlife',
+    category: 'exploration',
+    display_safe: false,
+    style_family: 'retro-chrome',
+    notes: 'Mirror-forward chrome with magenta/green club accents and moving shine sweeps.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.7,
+      camera: {
+        position: [0, 0.3, 13.22],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.1,
+        orbitYAmplitude: 0.03,
+        orbitZAmplitude: 0.04
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.08,
+        turns: 1,
+        tiltX: 0.26,
+        driftY: 0.028,
+        driftRoll: 0.02
+      },
+      extrusionDepth: 48,
+      bevelThickness: 6.4,
+      bevelSize: 3.9,
+      bevelSegments: 7,
+      glow: {
+        enabled: true,
+        haloColor: '#ff56e8',
+        innerColor: '#54ffb4',
+        beamColor: '#aeeeff',
+        haloOpacity: 0.24,
+        innerOpacity: 0.16,
+        beamOpacity: 0.07,
+        haloScale: 9.8,
+        innerScale: 7.0,
+        beamWidth: 2.2,
+        beamHeight: 9.4,
+        haloPosition: [0, 0.16, -1.64],
+        innerPosition: [0, 0.12, -1.03],
+        beamPosition: [0, 0.08, -1.9],
+        pulseAmplitude: 0.05,
+        innerPulseAmplitude: 0.04,
+        beamPulseAmplitude: 0.03,
+        rotationFactor: -0.11
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#54ffb4',
+        opacity: 0.08,
+        width: 5.3,
+        depth: 2.9,
+        y: -1.32,
+        z: 0,
+        pulseAmplitude: 0.03,
+        scalePulse: 0.04
+      },
+      materials: {
+        face: {
+          color: '#d7e2ef',
+          emissive: '#6df7d7',
+          emissiveIntensity: 0.32,
+          metalness: 1,
+          roughness: 0.05,
+          clearcoat: 1,
+          clearcoatRoughness: 0.02,
+          reflectivity: 1,
+          surfacePattern: {
+            mode: 'brushed-metal',
+            strength: 0.28
+          }
+        },
+        side: {
+          color: '#757c8a',
+          emissive: '#cb4ce8',
+          emissiveIntensity: 0.24,
+          metalness: 0.94,
+          roughness: 0.14,
+          clearcoat: 0.92,
+          clearcoatRoughness: 0.08
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      logoOutline: {
+        enabled: true,
+        color: '#ff58e9',
+        secondaryColor: '#59ffba',
+        opacity: 0.28,
+        secondaryOpacity: 0.2,
+        thickness: 0.9,
+        pulseAmplitude: 0.05,
+        rotationFactor: -0.06,
+        zOffset: 0.06
+      },
+      sweepLight: {
+        enabled: true,
+        color: '#f8fbff',
+        opacity: 0.14,
+        width: 2.6,
+        height: 9.2,
+        z: 0.94,
+        angle: 0.32,
+        range: 7.2,
+        speed: 1.35
+      },
+      lighting: {
+        ambientSky: '#f8f8ff',
+        ambientGround: '#030208',
+        ambientIntensity: 0.96,
+        keyColor: '#d8f6ff',
+        keyIntensity: 2.8,
+        keyPosition: [5.4, 4.9, 7.5],
+        rimColor: '#ff73ea',
+        rimIntensity: 2.25,
+        rimPosition: [-5.6, 1.8, -4.4],
+        lowerColor: '#5bffc3',
+        lowerIntensity: 6.3,
+        lowerDistance: 18,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.05, 4.0]
+      }
+    }
+  },
+  'wireframe-reveal': {
+    label: 'Wireframe Reveal',
+    category: 'cinematic',
+    display_safe: false,
+    style_family: 'technical-reveal',
+    notes: 'Blueprint-style wireframe reveal that resolves into a polished finished mark.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000206',
+      logoSize: 5.68,
+      camera: {
+        position: [0, 0.26, 13.4],
+        lookAt: [0, 0.17, 0],
+        orbitXAmplitude: 0.07,
+        orbitYAmplitude: 0.024,
+        orbitZAmplitude: 0.034
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.1,
+        turns: 1,
+        tiltX: 0.21,
+        driftY: 0.016,
+        driftRoll: 0.011
+      },
+      extrusionDepth: 40,
+      bevelThickness: 4.8,
+      bevelSize: 3.2,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#9ff7ff',
+        innerColor: '#73d6ff',
+        beamColor: '#bee8ff',
+        haloOpacity: 0.26,
+        innerOpacity: 0.18,
+        beamOpacity: 0.08,
+        haloScale: 9.6,
+        innerScale: 6.9,
+        beamWidth: 2.2,
+        beamHeight: 9.3,
+        haloPosition: [0, 0.15, -1.6],
+        innerPosition: [0, 0.12, -1.0],
+        beamPosition: [0, 0.05, -1.88],
+        pulseAmplitude: 0.05,
+        innerPulseAmplitude: 0.04,
+        beamPulseAmplitude: 0.02,
+        rotationFactor: -0.09
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#75dfff',
+        opacity: 0.11,
+        width: 5.2,
+        depth: 2.9,
+        y: -1.3,
+        z: 0,
+        pulseAmplitude: 0.03,
+        scalePulse: 0.04
+      },
+      materials: {
+        face: {
+          color: '#d0def4',
+          emissive: '#67b5ff',
+          emissiveIntensity: 0.3,
+          metalness: 0.72,
+          roughness: 0.2,
+          clearcoat: 0.94,
+          clearcoatRoughness: 0.08,
+          reflectivity: 0.72
+        },
+        side: {
+          color: '#4f6284',
+          emissive: '#2d5f93',
+          emissiveIntensity: 0.18,
+          metalness: 0.58,
+          roughness: 0.28,
+          clearcoat: 0.74,
+          clearcoatRoughness: 0.14
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      sequence: {
+        mode: 'wireframe-reveal',
+        wireColor: '#8ef4ff',
+        wireOpacity: 0.92,
+        revealStart: 0,
+        revealEnd: 0.58,
+        settleEnd: 0.9,
+        scaleStart: 0.9,
+        emissiveBoost: 0.3
+      }
+    }
+  },
+  'molten-gold-formation': {
+    label: 'Molten Gold Formation',
+    category: 'cinematic',
+    display_safe: false,
+    style_family: 'molten-formation',
+    notes: 'Cinematic molten-gold formation that settles into a premium final object.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#060200',
+      ...createGoldPalette(),
+      logoSize: 5.68,
+      camera: {
+        position: [0, 0.24, 13.35],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.07,
+        orbitYAmplitude: 0.024,
+        orbitZAmplitude: 0.03
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.12,
+        turns: 1,
+        tiltX: 0.2,
+        driftY: 0.02,
+        driftRoll: 0.014
+      },
+      extrusionDepth: 56,
+      bevelThickness: 8.6,
+      bevelSize: 5.2,
+      bevelSegments: 7,
+      glow: {
+        enabled: true,
+        haloColor: '#ffd77a',
+        innerColor: '#ff9f45',
+        beamColor: '#ffc46a',
+        haloOpacity: 0.16,
+        innerOpacity: 0.1,
+        beamOpacity: 0.04,
+        haloScale: 9.6,
+        innerScale: 6.8,
+        beamWidth: 2.1,
+        beamHeight: 8.9,
+        haloPosition: [0, 0.1, -1.64],
+        innerPosition: [0, 0.08, -1.0],
+        beamPosition: [0, 0.05, -1.9],
+        pulseAmplitude: 0.04,
+        innerPulseAmplitude: 0.03,
+        beamPulseAmplitude: 0.02,
+        rotationFactor: -0.06
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#ffbb5d',
+        opacity: 0.09,
+        width: 5.2,
+        depth: 2.8,
+        y: -1.3,
+        z: 0,
+        pulseAmplitude: 0.03,
+        scalePulse: 0.04
+      },
+      materials: {
+        face: {
+          color: '#f6ce74',
+          emissive: '#b96e11',
+          emissiveIntensity: 0.24,
+          metalness: 0.94,
+          roughness: 0.16,
+          clearcoat: 1,
+          clearcoatRoughness: 0.05,
+          reflectivity: 0.94
+        },
+        side: {
+          color: '#925f1e',
+          emissive: '#744514',
+          emissiveIntensity: 0.16,
+          metalness: 0.86,
+          roughness: 0.25,
+          clearcoat: 0.9,
+          clearcoatRoughness: 0.11
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      sequence: {
+        mode: 'molten-formation',
+        revealStart: 0,
+        revealEnd: 0.72,
+        settleEnd: 0.95,
+        scaleStart: 0.92,
+        emissiveBoost: 0.9,
+        roughnessBoost: 0.24,
+        glowBoost: 0.18
+      }
+    }
+  },
+  'led-nightclub-panel': {
+    label: 'LED Nightclub Panel',
+    category: 'display-safe',
+    display_safe: true,
+    style_family: 'led-panel',
+    notes: 'Hardware-native LED matrix look with dense luminance and strong center readability.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.84,
+      camera: {
+        position: [0, 0.24, 13.24],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.05,
+        orbitYAmplitude: 0.02,
+        orbitZAmplitude: 0.025
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.08,
+        turns: 1,
+        tiltX: 0.16,
+        driftY: 0.012,
+        driftRoll: 0.009
+      },
+      extrusionDepth: 30,
+      bevelThickness: 2.4,
+      bevelSize: 1.3,
+      bevelSegments: 4,
+      glow: {
+        enabled: true,
+        haloColor: '#72f6ff',
+        innerColor: '#3ae2ff',
+        beamColor: '#77d3ff',
+        haloOpacity: 0.2,
+        innerOpacity: 0.16,
+        beamOpacity: 0.05,
+        haloScale: 9.1,
+        innerScale: 6.6,
+        beamWidth: 1.9,
+        beamHeight: 8.4,
+        haloPosition: [0, 0.14, -1.56],
+        innerPosition: [0, 0.12, -0.98],
+        beamPosition: [0, 0.05, -1.82],
+        pulseAmplitude: 0.05,
+        innerPulseAmplitude: 0.04,
+        beamPulseAmplitude: 0.02,
+        rotationFactor: -0.07
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#4befff',
+        opacity: 0.1,
+        width: 5.1,
+        depth: 2.8,
+        y: -1.3,
+        z: 0,
+        pulseAmplitude: 0.03,
+        scalePulse: 0.04
+      },
+      materials: {
+        face: {
+          color: '#57f4ff',
+          emissive: '#5bf2ff',
+          emissiveIntensity: 1.36,
+          metalness: 0.14,
+          roughness: 0.42,
+          clearcoat: 0.24,
+          clearcoatRoughness: 0.22,
+          reflectivity: 0.36,
+          surfacePattern: {
+            mode: 'led-grid',
+            cellSize: 24,
+            gap: 0.42,
+            contrast: 1.2
+          }
+        },
+        side: {
+          color: '#10364a',
+          emissive: '#1495b8',
+          emissiveIntensity: 0.44,
+          metalness: 0.28,
+          roughness: 0.4,
+          clearcoat: 0.48,
+          clearcoatRoughness: 0.26
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      logoOutline: {
+        enabled: true,
+        color: '#74f8ff',
+        opacity: 0.22,
+        thickness: 0.76,
+        pulseAmplitude: 0.03,
+        rotationFactor: -0.05,
+        zOffset: 0.05
+      },
+      lighting: {
+        ambientSky: '#d4fbff',
+        ambientGround: '#02070a',
+        ambientIntensity: 1.08,
+        keyColor: '#d9fbff',
+        keyIntensity: 2.1,
+        keyPosition: [4.8, 4.8, 6.8],
+        rimColor: '#6cd9ff',
+        rimIntensity: 1.6,
+        rimPosition: [-5.1, 1.5, -4.2],
+        lowerColor: '#2db1dd',
+        lowerIntensity: 6.1,
+        lowerDistance: 20,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 4.0]
+      }
+    }
+  },
+  'stadium-hero': {
+    label: 'Stadium Hero',
+    category: 'cinematic',
+    display_safe: false,
+    style_family: 'arena-hero',
+    notes: 'Arena-scale hero reveal with premium gold mass and controlled beam framing.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#030203',
+      ...createGoldPalette(),
+      logoSize: 5.72,
+      camera: {
+        position: [0, 0.3, 13.2],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.08,
+        orbitYAmplitude: 0.028,
+        orbitZAmplitude: 0.036
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.08,
+        turns: 1,
+        tiltX: 0.22,
+        driftY: 0.018,
+        driftRoll: 0.012
+      },
+      extrusionDepth: 54,
+      bevelThickness: 8.2,
+      bevelSize: 5,
+      bevelSegments: 7,
+      glow: {
+        enabled: true,
+        haloColor: '#ffe2a3',
+        innerColor: '#f6c973',
+        beamColor: '#ffd698',
+        haloOpacity: 0.14,
+        innerOpacity: 0.1,
+        beamOpacity: 0.04,
+        haloScale: 9.8,
+        innerScale: 7.0,
+        beamWidth: 2.3,
+        beamHeight: 9.5,
+        haloPosition: [0, 0.16, -1.68],
+        innerPosition: [0, 0.12, -1.02],
+        beamPosition: [0, 0.04, -1.95],
+        pulseAmplitude: 0.03,
+        innerPulseAmplitude: 0.02,
+        beamPulseAmplitude: 0.015,
+        rotationFactor: -0.05
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#ffcf77',
+        opacity: 0.07,
+        width: 5.3,
+        depth: 3,
+        y: -1.32,
+        z: 0,
+        pulseAmplitude: 0.02,
+        scalePulse: 0.03
+      },
+      stadiumBeams: {
+        enabled: true,
+        color: '#ffe0a2',
+        coreColor: '#fff7df',
+        opacity: 0.14,
+        coreOpacity: 0.08,
+        width: 2.5,
+        height: 10,
+        spread: 3.2,
+        y: 0.34,
+        z: -1.8,
+        pulseAmplitude: 0.04,
+        scalePulse: 0.05
+      },
+      materials: {
+        face: {
+          color: '#f5d98f',
+          emissive: '#9f661c',
+          emissiveIntensity: 0.2,
+          metalness: 0.98,
+          roughness: 0.12,
+          clearcoat: 1,
+          clearcoatRoughness: 0.04,
+          reflectivity: 0.95
+        },
+        side: {
+          color: '#946424',
+          emissive: '#6f4517',
+          emissiveIntensity: 0.1,
+          metalness: 0.9,
+          roughness: 0.2,
+          clearcoat: 0.9,
+          clearcoatRoughness: 0.1
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      sweepLight: {
+        enabled: true,
+        color: '#fff3d6',
+        opacity: 0.08,
+        width: 2.8,
+        height: 9.6,
+        z: 0.9,
+        angle: 0.24,
+        range: 6.8,
+        speed: 0.75
+      },
+      lighting: {
+        ambientSky: '#fff2d7',
+        ambientGround: '#120a03',
+        ambientIntensity: 0.9,
+        keyColor: '#fff1c4',
+        keyIntensity: 3.8,
+        keyPosition: [5.8, 5.8, 7.8],
+        rimColor: '#ffd58b',
+        rimIntensity: 2.25,
+        rimPosition: [-5.4, 1.8, -4.4],
+        lowerColor: '#af7928',
+        lowerIntensity: 5.9,
+        lowerDistance: 18,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.1, 4.0]
+      }
+    }
+  },
+  'art-deco-plaque': {
+    label: 'Art Deco Plaque',
+    category: 'exploration',
+    display_safe: false,
+    style_family: 'art-deco-plaque',
+    notes: 'Brushed brass and black luxury plaque with restrained motion and geometric framing.',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#040302',
+      logoSize: 5.58,
+      camera: {
+        position: [0, 0.2, 13.78],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.025,
+        orbitYAmplitude: 0.008,
+        orbitZAmplitude: 0.014
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.14,
+        turns: 1,
+        tiltX: 0.11,
+        driftY: 0.004,
+        driftRoll: 0.003
+      },
+      extrusionDepth: 44,
+      bevelThickness: 5.8,
+      bevelSize: 3.7,
+      bevelSegments: 6,
+      glow: {
+        enabled: false
+      },
+      baseHalo: {
+        enabled: false
+      },
+      materials: {
+        face: {
+          color: '#d3aa61',
+          emissive: '#7d4f1a',
+          emissiveIntensity: 0.14,
+          metalness: 0.88,
+          roughness: 0.22,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          reflectivity: 0.88,
+          surfacePattern: {
+            mode: 'brushed-metal',
+            strength: 0.48
+          }
+        },
+        side: {
+          color: '#24180f',
+          emissive: '#120c08',
+          emissiveIntensity: 0.06,
+          metalness: 0.6,
+          roughness: 0.4,
+          clearcoat: 0.68,
+          clearcoatRoughness: 0.21
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      backplate: {
+        enabled: true,
+        color: '#1a1208',
+        emissive: '#2c1a0f',
+        emissiveIntensity: 0.05,
+        metalness: 0.76,
+        roughness: 0.35,
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.18,
+        opacity: 0.98,
+        transparent: false,
+        widthPadding: 1.18,
+        heightPadding: 0.98,
+        depth: 0.34,
+        z: -0.84,
+        pattern: {
+          mode: 'deco-frame'
+        }
+      },
+      logoOutline: {
+        enabled: true,
+        color: '#e2c078',
+        opacity: 0.16,
+        thickness: 0.86,
+        pulseAmplitude: 0.015,
+        rotationFactor: -0.01,
+        zOffset: 0.05
+      },
+      sweepLight: {
+        enabled: true,
+        color: '#fff1d0',
+        opacity: 0.05,
+        width: 2.2,
+        height: 8.8,
+        z: 0.86,
+        angle: 0.16,
+        range: 5.2,
+        speed: 0.4
+      },
+      lighting: {
+        ambientSky: '#f7edd8',
+        ambientGround: '#0a0602',
+        ambientIntensity: 0.88,
+        keyColor: '#ffebc0',
+        keyIntensity: 3,
+        keyPosition: [5.6, 5.1, 7.2],
+        rimColor: '#d9b06a',
+        rimIntensity: 1.75,
+        rimPosition: [-5.4, 1.6, -4.0],
+        lowerColor: '#7c5321',
+        lowerIntensity: 4.2,
+        lowerDistance: 17,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 4.0]
+      }
+    }
   }
 };
 
@@ -1331,6 +2552,18 @@ export const jobSets = {
     { logo: 'big-eazy', variant: 'display', preset: 'floating-luxury-hologram' },
     { logo: 'big-eazy', variant: 'display', preset: 'spinning-3d-emblem' },
     { logo: 'big-eazy', variant: 'display', preset: 'futuristic-projection' }
+  ],
+  'big-eazy-new-style-families': [
+    { logo: 'big-eazy', variant: 'display', preset: 'casino-neon-sign' },
+    { logo: 'big-eazy', variant: 'display', preset: 'trophy-emblem' },
+    { logo: 'big-eazy', variant: 'display', preset: 'crystal-glass-luxury' },
+    { logo: 'big-eazy', variant: 'display', preset: 'mardi-gras-royal-crest' },
+    { logo: 'big-eazy', variant: 'display', preset: 'retro-chrome-nightlife' },
+    { logo: 'big-eazy', variant: 'display', preset: 'wireframe-reveal' },
+    { logo: 'big-eazy', variant: 'display', preset: 'molten-gold-formation' },
+    { logo: 'big-eazy', variant: 'display', preset: 'led-nightclub-panel' },
+    { logo: 'big-eazy', variant: 'display', preset: 'stadium-hero' },
+    { logo: 'big-eazy', variant: 'display', preset: 'art-deco-plaque' }
   ],
   'shared-deployable-presets': [
     { logo: 'big-eazy', variant: 'display', preset: 'midnight-emboss' },
