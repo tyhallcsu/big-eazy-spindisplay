@@ -135,7 +135,7 @@ Display contact sheet:
 - Big Eazy original EPS: [547227273_122137993856924986_8556302376693794118_n.eps](547227273_122137993856924986_8556302376693794118_n.eps)
 - Big Eazy original PDF: [547227273_122137993856924986_8556302376693794118_n.pdf](547227273_122137993856924986_8556302376693794118_n.pdf)
 - Big Eazy original DXF: [547227273_122137993856924986_8556302376693794118_n.dxf](547227273_122137993856924986_8556302376693794118_n.dxf)
-- Big Eazy raster reference: [source/big-eazy-v2/21D66EE7-CC25-4BE6-B043-1DE31E235C76.png](source/big-eazy-v2/21D66EE7-CC25-4BE6-B043-1DE31E235C76.png)
+- Big Eazy raster reference: [source/big-eazy-v2/big-eazy-v2.png](source/big-eazy-v2/big-eazy-v2.png)
 - Earth Saving Solutions original SVG: [source/ESS-LOGO-THICK-BLACK.svg](source/ESS-LOGO-THICK-BLACK.svg)
 
 ## Generated Assets
