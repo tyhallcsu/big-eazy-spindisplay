@@ -90,6 +90,7 @@ Display contact sheet:
 
 - `big-eazy`
 - `earth-saving-solutions`
+- `munchies-and-mimosas`
 
 ### Variants
 
@@ -97,6 +98,8 @@ Display contact sheet:
 - `big-eazy/display`: removes the small tagline for display readability
 - `earth-saving-solutions/full`: faithful full two-line mark
 - `earth-saving-solutions/display`: keeps the roof mark plus `EARTH SAVING` and drops `SOLUTIONS`
+- `munchies-and-mimosas/full`: faithful original logo
+- `munchies-and-mimosas/display`: current display-ready build using the full transparent art
 
 ### Presets
 
@@ -107,6 +110,16 @@ Display contact sheet:
 - `floating-luxury-hologram`: restrained cyan/teal floating hologram treatment tuned for real single-fan readability
 - `spinning-3d-emblem`: gold-forward bevel-heavy concept with the strongest real-hardware readability bias
 - `futuristic-projection`: projection-in-air treatment with a controlled plate/beam system that frames the logo instead of overpowering it
+- `midnight-emboss`: graphite-on-black embossed treatment with minimal motion and strong rim readability
+- `signal-beacon`: cyan/white deployable hologram look with a controlled vertical beacon behind the mark
+- `glass-panel-hologram`: acrylic-shield hologram treatment with a subtle panel and restrained halo
+- `amber-marquee`: warm amber deployable look with stronger readability than the heavy gold emblem concept
+
+### Color Modes
+
+- `preset`: use the preset's built-in material and glow colors
+- `custom`: replace the active look with a single user-selected primary color and auto-derived accents
+- `original-svg`: use the SVG fill colors directly on the 3D geometry, with a readability lift for very dark fills
 
 ## Key Files
 
@@ -196,6 +209,24 @@ Build the full Big Eazy concept batch:
 npm run build:all-concepts
 ```
 
+Build the shared deployable preset batch for all `display` variants:
+
+```bash
+npm run build:deployable-presets
+```
+
+Build with a custom runtime color:
+
+```bash
+npm run build:logo -- --logo big-eazy --variant display --preset amber-marquee --color-mode custom --primary-color ff5a1f
+```
+
+Build using original SVG fill colors:
+
+```bash
+npm run build:logo -- --logo munchies-and-mimosas --variant display --preset glass-panel-hologram --color-mode original-svg
+```
+
 Compatibility alias for the original Big Eazy SpinDisplay loop:
 
 ```bash
@@ -213,9 +244,25 @@ renders/<logo-id>/<variant>/<preset>/master.mp4
 renders/<logo-id>/<variant>/<preset>/preview.gif
 renders/<logo-id>/<variant>/<preset>/contact-sheet.png
 renders/<logo-id>/<variant>/<preset>/ffprobe.json
+renders/<logo-id>/<variant>/<preset>--custom-<hex>/...
+renders/<logo-id>/<variant>/<preset>--original-svg/...
 ```
 
-Variant-level GLBs stay in `source/<logo-id>/<variant>.glb` for backward compatibility. Concept presets that alter bevel/depth also write a deterministic preset-specific GLB to `renders/<logo-id>/<variant>/<preset>/asset.glb`.
+Variant-level GLBs stay in `source/<logo-id>/<variant>.glb` for backward compatibility when using default preset colors. Concept presets that alter bevel/depth also write a deterministic preset-specific GLB to `renders/<logo-id>/<variant>/<preset>/asset.glb`.
+
+When `--color-mode` is anything other than `preset`, outputs go to a suffixed render directory so alternate colorways do not overwrite the default preset render. Those non-default color runs also export their GLB into the suffixed render directory instead of `source/<logo-id>/<variant>.glb`.
+
+## Viewer Controls
+
+Open `viewer/index.html` in the browser or through the render server and use the built-in controls to switch:
+
+- logo
+- variant
+- preset
+- `Color Mode`
+- `Primary Color` when `Color Mode` is `custom`
+
+The viewer stores color choices in the URL via `colorMode` and `primaryColor`, so scenes are shareable and render exports can reuse the same settings.
 
 ## Hardware Target
 
@@ -239,6 +286,7 @@ Variant-level GLBs stay in `source/<logo-id>/<variant>.glb` for backward compati
 Add or tune future looks in [scripts/render-manifest.mjs](scripts/render-manifest.mjs):
 
 - define a new preset under `presetDefinitions`
+- decide whether the preset should enable `baseHalo`, `projectionPlate`, `lightColumn`, or `shieldPanel`
 - decide whether the preset should export a variant-level or preset-level GLB
 - add any reusable job batch under `jobSets`
 - keep new effects compatible with the existing viewer config shape before extending [viewer/app.js](viewer/app.js)

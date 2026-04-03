@@ -9,6 +9,7 @@
     "build:concept": "node scripts/build-logo-renders.mjs",
     "build:examples": "node scripts/build-logo-renders.mjs --examples",
     "build:all-concepts": "node scripts/build-logo-renders.mjs --job-set big-eazy-concepts",
+    "build:deployable-presets": "node scripts/build-logo-renders.mjs --job-set shared-deployable-presets",
     "build:spin": "node scripts/build-logo-renders.mjs --logo big-eazy --variant display --preset spindisplay-loop"
   },
   "dependencies": {

@@ -24,6 +24,8 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
+const COLOR_MODES = new Set(['preset', 'custom', 'original-svg']);
+const SCREENSHOT_TIMEOUT_MS = 300000;
 
 function parseArgs(argv) {
   const options = {
@@ -31,7 +33,9 @@ function parseArgs(argv) {
     jobSet: null,
     logo: null,
     variant: null,
-    preset: null
+    preset: null,
+    colorMode: null,
+    primaryColor: null
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -63,19 +67,76 @@ function parseArgs(argv) {
     if (arg === '--preset') {
       options.preset = argv[index + 1];
       index += 1;
+      continue;
+    }
+
+    if (arg === '--color-mode') {
+      options.colorMode = argv[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--primary-color') {
+      options.primaryColor = argv[index + 1];
+      index += 1;
     }
   }
 
   return options;
 }
 
+function normalizeColorMode(value) {
+  if (!value) {
+    return 'preset';
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+
+  if (!COLOR_MODES.has(normalized)) {
+    throw new Error(
+      `Unknown color mode "${value}". Expected one of: ${Array.from(COLOR_MODES).join(', ')}.`
+    );
+  }
+
+  return normalized;
+}
+
+function normalizePrimaryColor(value) {
+  if (!value) {
+    return null;
+  }
+
+  let normalized = String(value).trim().replace(/^#/, '').toLowerCase();
+
+  if (/^[0-9a-f]{3}$/i.test(normalized)) {
+    normalized = normalized
+      .split('')
+      .map((character) => `${character}${character}`)
+      .join('');
+  }
+
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) {
+    throw new Error(`Invalid primary color "${value}". Expected a 3 or 6 digit hex value.`);
+  }
+
+  return normalized;
+}
+
+function attachJobOptions(jobs, options) {
+  return jobs.map((job) => ({
+    ...job,
+    colorMode: options.colorMode ?? job.colorMode ?? null,
+    primaryColor: options.primaryColor ?? job.primaryColor ?? null
+  }));
+}
+
 function resolveJobs(options) {
   if (options.examples) {
-    return getJobSetDefinition('examples').map((job) => ({ ...job }));
+    return attachJobOptions(getJobSetDefinition('examples'), options);
   }
 
   if (options.jobSet) {
-    return getJobSetDefinition(options.jobSet).map((job) => ({ ...job }));
+    return attachJobOptions(getJobSetDefinition(options.jobSet), options);
   }
 
   const logoId = options.logo || 'big-eazy';
@@ -89,7 +150,9 @@ function resolveJobs(options) {
     {
       logo: logoId,
       variant: variantId,
-      preset: presetId
+      preset: presetId,
+      colorMode: options.colorMode,
+      primaryColor: options.primaryColor
     }
   ];
 }
@@ -98,12 +161,30 @@ function getVariantGlbPath(logoId, variantId) {
   return path.join(rootDir, 'source', logoId, `${variantId}.glb`);
 }
 
-function getRenderDir(logoId, variantId, presetId) {
-  return path.join(rootDir, 'renders', logoId, variantId, presetId);
+function getRenderPresetDirName(presetId, colorSelection) {
+  if (colorSelection.colorMode === 'custom') {
+    return `${presetId}--custom-${colorSelection.primaryColor}`;
+  }
+
+  if (colorSelection.colorMode === 'original-svg') {
+    return `${presetId}--original-svg`;
+  }
+
+  return presetId;
 }
 
-function getRenderOutputs(logoId, variantId, presetId) {
-  const baseDir = getRenderDir(logoId, variantId, presetId);
+function getRenderDir(logoId, variantId, presetId, colorSelection) {
+  return path.join(
+    rootDir,
+    'renders',
+    logoId,
+    variantId,
+    getRenderPresetDirName(presetId, colorSelection)
+  );
+}
+
+function getRenderOutputs(logoId, variantId, presetId, colorSelection) {
+  const baseDir = getRenderDir(logoId, variantId, presetId, colorSelection);
 
   return {
     dir: baseDir,
@@ -113,6 +194,19 @@ function getRenderOutputs(logoId, variantId, presetId) {
     gif: path.join(baseDir, 'preview.gif'),
     contactSheet: path.join(baseDir, 'contact-sheet.png'),
     metadata: path.join(baseDir, 'ffprobe.json')
+  };
+}
+
+function resolveJobColorSelection(job, profile) {
+  const colorMode = normalizeColorMode(job.colorMode);
+  const fallbackPrimaryColor = normalizePrimaryColor(profile.scene.materials.face.color) || 'ffffff';
+
+  return {
+    colorMode,
+    primaryColor:
+      colorMode === 'custom'
+        ? normalizePrimaryColor(job.primaryColor) || fallbackPrimaryColor
+        : null
   };
 }
 
@@ -250,10 +344,28 @@ async function exportGlbIfNeeded(page, glbPath, glbCache) {
     return;
   }
 
+  if (existsSync(glbPath)) {
+    const existing = await stat(glbPath);
+
+    if (existing.size > 0) {
+      glbCache.add(glbPath);
+      return;
+    }
+  }
+
   await mkdir(path.dirname(glbPath), { recursive: true });
 
-  const glbBase64 = await page.evaluate(() => window.sceneApi.exportGLB());
-  await writeFile(glbPath, Buffer.from(glbBase64, 'base64'));
+  const downloadPromise = page.waitForEvent('download');
+  await page.evaluate((fileName) => window.sceneApi.downloadGLB(fileName), path.basename(glbPath));
+  const download = await downloadPromise;
+  await download.saveAs(glbPath);
+
+  const exported = await stat(glbPath);
+
+  if (exported.size === 0) {
+    throw new Error(`GLB export returned empty data for ${glbPath}`);
+  }
+
   glbCache.add(glbPath);
 }
 
@@ -271,7 +383,10 @@ async function captureAnimationFrames(page, profile, framesDir) {
       window.sceneApi.setProgress(value);
     }, progress);
 
-    await page.screenshot({ path: framePath });
+    await page.screenshot({
+      path: framePath,
+      timeout: SCREENSHOT_TIMEOUT_MS
+    });
 
     if (frame % 30 === 0) {
       console.log(
@@ -285,10 +400,11 @@ async function buildJob(page, origin, job, glbCache) {
   await ensureDerivedVariant(job.logo, job.variant);
 
   const profile = getResolvedRenderProfile(job.logo, job.variant, job.preset);
-  const outputs = getRenderOutputs(job.logo, job.variant, job.preset);
+  const colorSelection = resolveJobColorSelection(job, profile);
+  const outputs = getRenderOutputs(job.logo, job.variant, job.preset, colorSelection);
   await mkdir(outputs.dir, { recursive: true });
   const glbPath =
-    profile.outputs.glbPathMode === 'preset'
+    colorSelection.colorMode !== 'preset' || profile.outputs.glbPathMode === 'preset'
       ? outputs.glb
       : getVariantGlbPath(job.logo, job.variant);
 
@@ -296,6 +412,14 @@ async function buildJob(page, origin, job, glbCache) {
   url.searchParams.set('logo', job.logo);
   url.searchParams.set('variant', job.variant);
   url.searchParams.set('preset', job.preset);
+
+  if (colorSelection.colorMode !== 'preset') {
+    url.searchParams.set('colorMode', colorSelection.colorMode);
+  }
+
+  if (colorSelection.colorMode === 'custom' && colorSelection.primaryColor) {
+    url.searchParams.set('primaryColor', colorSelection.primaryColor);
+  }
 
   await page.goto(url.toString(), {
     waitUntil: 'networkidle'
@@ -314,7 +438,10 @@ async function buildJob(page, origin, job, glbCache) {
   }, profile.scene.animation.stillProgress);
 
   if (profile.outputs.preview) {
-    await page.screenshot({ path: outputs.preview });
+    await page.screenshot({
+      path: outputs.preview,
+      timeout: SCREENSHOT_TIMEOUT_MS
+    });
   }
 
   if (!profile.outputs.mp4 && !profile.outputs.gif && !profile.outputs.contactSheet && !profile.outputs.metadata) {
@@ -389,6 +516,7 @@ async function main() {
   const glbCache = new Set();
   const staticServer = await startStaticServer();
   let browser;
+  let context;
 
   try {
     browser = await chromium.launch({
@@ -401,10 +529,12 @@ async function main() {
       ]
     });
 
-    const page = await browser.newPage({
+    context = await browser.newContext({
+      acceptDownloads: true,
       viewport: { width: 1024, height: 1024 },
       deviceScaleFactor: 1
     });
+    const page = await context.newPage();
 
     page.on('console', (message) => {
       if (message.type() === 'error') {
@@ -413,10 +543,21 @@ async function main() {
     });
 
     for (const job of jobs) {
-      console.log(`Rendering ${job.logo}/${job.variant}/${job.preset}`);
+      const colorMode = normalizeColorMode(job.colorMode);
+      const colorLabel =
+        colorMode === 'custom' && job.primaryColor
+          ? ` (${colorMode}:${normalizePrimaryColor(job.primaryColor)})`
+          : colorMode === 'preset'
+            ? ''
+            : ` (${colorMode})`;
+      console.log(`Rendering ${job.logo}/${job.variant}/${job.preset}${colorLabel}`);
       await buildJob(page, staticServer.origin, job, glbCache);
     }
   } finally {
+    if (context) {
+      await context.close();
+    }
+
     if (browser) {
       await browser.close();
     }

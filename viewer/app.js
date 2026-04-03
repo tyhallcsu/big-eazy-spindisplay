@@ -10,13 +10,13 @@ import {
 
 const DEFAULT_LOGO_ID = 'big-eazy';
 const DEFAULT_PRESET_ID = 'spindisplay-loop';
-const searchParams = new URLSearchParams(window.location.search);
-const requestedLogoId = searchParams.get('logo') || DEFAULT_LOGO_ID;
-const requestedVariantId = searchParams.get('variant');
-const requestedPresetId = searchParams.get('preset') || DEFAULT_PRESET_ID;
-const uiParam = searchParams.get('ui');
-const SHOW_UI = uiParam === '1' || (uiParam !== '0' && !navigator.webdriver);
+const DEFAULT_COLOR_MODE = 'preset';
 const STATUS_AUTO_CLEAR_MS = 2200;
+const COLOR_MODE_LABELS = {
+  preset: 'Preset Colors',
+  custom: 'Custom Color',
+  'original-svg': 'Original SVG Colors'
+};
 const PRESET_ASSET_DEFINITIONS = [
   {
     key: 'preview',
@@ -44,6 +44,165 @@ const PRESET_ASSET_DEFINITIONS = [
   }
 ];
 
+function normalizeHexColor(value) {
+  if (!value) {
+    return null;
+  }
+
+  let normalized = String(value).trim().replace(/^#/, '').toLowerCase();
+
+  if (/^[0-9a-f]{3}$/i.test(normalized)) {
+    normalized = normalized
+      .split('')
+      .map((character) => `${character}${character}`)
+      .join('');
+  }
+
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeColorMode(value) {
+  if (value === 'custom' || value === 'original-svg') {
+    return value;
+  }
+
+  return DEFAULT_COLOR_MODE;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function hexToColor(hex) {
+  return new THREE.Color(`#${hex}`);
+}
+
+function colorToHex(color) {
+  return color.getHexString();
+}
+
+function adjustColor(color, overrides = {}) {
+  const next = color.clone();
+  next.offsetHSL(overrides.h ?? 0, overrides.s ?? 0, overrides.l ?? 0);
+
+  const hsl = { h: 0, s: 0, l: 0 };
+  next.getHSL(hsl);
+  next.setHSL(
+    hsl.h,
+    clamp(hsl.s, overrides.minSaturation ?? 0, overrides.maxSaturation ?? 1),
+    clamp(hsl.l, overrides.minLightness ?? 0, overrides.maxLightness ?? 1)
+  );
+
+  return next;
+}
+
+function createReadableSeedColor(hex, mode) {
+  const color = hexToColor(hex);
+  const hsl = { h: 0, s: 0, l: 0 };
+  color.getHSL(hsl);
+
+  if (mode === 'original-svg') {
+    if (hsl.l < 0.04) {
+      color.setHSL(hsl.h, Math.min(hsl.s, 0.2), 0.26);
+      return color;
+    }
+
+    if (hsl.l < 0.12) {
+      color.setHSL(hsl.h, clamp(hsl.s + 0.04, 0, 1), 0.3);
+      return color;
+    }
+
+    if (hsl.l < 0.18) {
+      color.setHSL(hsl.h, clamp(hsl.s + 0.02, 0, 1), 0.22);
+      return color;
+    }
+
+    return color;
+  }
+
+  if (hsl.l < 0.1) {
+    color.setHSL(hsl.h, clamp(hsl.s + 0.06, 0, 1), 0.24);
+  }
+
+  return color;
+}
+
+function derivePaletteFromHex(hex, mode) {
+  const seed = createReadableSeedColor(hex, mode);
+
+  return {
+    face: colorToHex(adjustColor(seed, { minLightness: 0.2 })),
+    faceEmissive: colorToHex(adjustColor(seed, { l: 0.08, minLightness: 0.32 })),
+    side: colorToHex(adjustColor(seed, { l: -0.18, minLightness: 0.08, maxLightness: 0.42 })),
+    sideEmissive: colorToHex(
+      adjustColor(seed, { l: -0.08, minLightness: 0.14, maxLightness: 0.44 })
+    ),
+    frame: colorToHex(adjustColor(seed, { l: 0.18, s: -0.08, minLightness: 0.52 })),
+    frameEmissive: colorToHex(adjustColor(seed, { l: 0.12, minLightness: 0.42 })),
+    halo: colorToHex(adjustColor(seed, { l: 0.22, minLightness: 0.58 })),
+    inner: colorToHex(adjustColor(seed, { l: 0.12, minLightness: 0.44 })),
+    beam: colorToHex(
+      adjustColor(seed, { l: 0.18, s: -0.06, minLightness: 0.5, maxSaturation: 0.9 })
+    ),
+    sky: colorToHex(adjustColor(seed, { l: 0.34, s: -0.18, minLightness: 0.74 })),
+    ground: colorToHex(
+      adjustColor(seed, { l: -0.44, s: -0.16, minLightness: 0.01, maxLightness: 0.14 })
+    ),
+    lower: colorToHex(
+      adjustColor(seed, { l: -0.18, s: -0.04, minLightness: 0.08, maxLightness: 0.36 })
+    )
+  };
+}
+
+function applyRuntimePalette(config, palette) {
+  config.materials.face.color = `#${palette.face}`;
+  config.materials.face.emissive = `#${palette.faceEmissive}`;
+  config.materials.face.emissiveIntensity = Math.max(config.materials.face.emissiveIntensity, 0.28);
+  config.materials.side.color = `#${palette.side}`;
+  config.materials.side.emissive = `#${palette.sideEmissive}`;
+  config.materials.side.emissiveIntensity = Math.max(config.materials.side.emissiveIntensity, 0.14);
+
+  if (config.materials.frame.enabled) {
+    config.materials.frame.color = `#${palette.frame}`;
+    config.materials.frame.emissive = `#${palette.frameEmissive}`;
+  }
+
+  if (config.glow.enabled) {
+    config.glow.haloColor = `#${palette.halo}`;
+    config.glow.innerColor = `#${palette.inner}`;
+    config.glow.beamColor = `#${palette.beam}`;
+  }
+
+  if (config.baseHalo.enabled) {
+    config.baseHalo.color = `#${palette.inner}`;
+  }
+
+  if (config.projectionPlate.enabled) {
+    config.projectionPlate.color = `#${palette.inner}`;
+    config.projectionPlate.underGlowColor = `#${palette.beam}`;
+  }
+
+  if (config.lightColumn.enabled) {
+    config.lightColumn.color = `#${palette.beam}`;
+    config.lightColumn.coreColor = `#${palette.halo}`;
+  }
+
+  if (config.shieldPanel.enabled) {
+    config.shieldPanel.color = `#${palette.sky}`;
+    config.shieldPanel.edgeColor = `#${palette.inner}`;
+  }
+
+  config.lighting.ambientSky = `#${palette.sky}`;
+  config.lighting.ambientGround = `#${palette.ground}`;
+  config.lighting.keyColor = `#${palette.halo}`;
+  config.lighting.rimColor = `#${palette.inner}`;
+  config.lighting.lowerColor = `#${palette.lower}`;
+}
+
 function resolveSelection(logoId, variantId, presetId) {
   const resolvedLogoId = logos[logoId] ? logoId : DEFAULT_LOGO_ID;
   const resolvedLogo = logos[resolvedLogoId];
@@ -59,13 +218,32 @@ function resolveSelection(logoId, variantId, presetId) {
   };
 }
 
+const searchParams = new URLSearchParams(window.location.search);
+const requestedLogoId = searchParams.get('logo') || DEFAULT_LOGO_ID;
+const requestedVariantId = searchParams.get('variant');
+const requestedPresetId = searchParams.get('preset') || DEFAULT_PRESET_ID;
+const requestedColorMode = normalizeColorMode(searchParams.get('colorMode'));
+const requestedPrimaryColor = normalizeHexColor(searchParams.get('primaryColor'));
+const requestedAutoSpin = searchParams.get('autospin') === '1';
+const uiParam = searchParams.get('ui');
+const SHOW_UI = uiParam === '1' || (uiParam !== '0' && !navigator.webdriver);
+
 const {
   logoId,
   variantId,
   presetId
 } = resolveSelection(requestedLogoId, requestedVariantId, requestedPresetId);
+
 const PROFILE = getResolvedRenderProfile(logoId, variantId, presetId);
-const CONFIG = PROFILE.scene;
+const BASE_CONFIG = structuredClone(PROFILE.scene);
+const BASE_PRIMARY_COLOR = normalizeHexColor(BASE_CONFIG.materials.face.color) || 'ffffff';
+const INITIAL_CUSTOM_PRIMARY_COLOR = requestedPrimaryColor || BASE_PRIMARY_COLOR;
+const REQUESTED_COLOR_SELECTION = {
+  mode: requestedColorMode,
+  primaryColor: requestedColorMode === 'custom' ? INITIAL_CUSTOM_PRIMARY_COLOR : null
+};
+
+let CONFIG = structuredClone(BASE_CONFIG);
 
 document.title = `${PROFILE.logo.label} ${PROFILE.variant.label} ${PROFILE.preset.label}`;
 document.body.style.background = CONFIG.background;
@@ -95,6 +273,15 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.fromArray(CONFIG.camera.position);
 
+const logoRig = new THREE.Group();
+scene.add(logoRig);
+
+const stageRig = new THREE.Group();
+scene.add(stageRig);
+
+const glowRig = new THREE.Group();
+scene.add(glowRig);
+
 let controls;
 let autoRotateButton;
 let autoRotateActive = false;
@@ -104,45 +291,18 @@ let exportStatusTimeoutId = 0;
 let capturePngButton;
 let downloadGlbButton;
 const presetAssetButtons = new Map();
+let glowParts = null;
+let stageParts = null;
+let activeColorState = {
+  colorMode: REQUESTED_COLOR_SELECTION.mode,
+  primaryColor: REQUESTED_COLOR_SELECTION.primaryColor,
+  dominantSvgColor: BASE_PRIMARY_COLOR
+};
 
-const ambientLight = new THREE.HemisphereLight(
-  CONFIG.lighting.ambientSky,
-  CONFIG.lighting.ambientGround,
-  CONFIG.lighting.ambientIntensity
-);
-scene.add(ambientLight);
-
-const keyLight = new THREE.DirectionalLight(
-  CONFIG.lighting.keyColor,
-  CONFIG.lighting.keyIntensity
-);
-keyLight.position.fromArray(CONFIG.lighting.keyPosition);
-scene.add(keyLight);
-
-const rimLight = new THREE.DirectionalLight(
-  CONFIG.lighting.rimColor,
-  CONFIG.lighting.rimIntensity
-);
-rimLight.position.fromArray(CONFIG.lighting.rimPosition);
-scene.add(rimLight);
-
-const lowerLight = new THREE.PointLight(
-  CONFIG.lighting.lowerColor,
-  CONFIG.lighting.lowerIntensity,
-  CONFIG.lighting.lowerDistance,
-  CONFIG.lighting.lowerDecay
-);
-lowerLight.position.fromArray(CONFIG.lighting.lowerPosition);
-scene.add(lowerLight);
-
-const logoRig = new THREE.Group();
-scene.add(logoRig);
-
-const stageRig = new THREE.Group();
-scene.add(stageRig);
-
-const glowRig = new THREE.Group();
-scene.add(glowRig);
+let ambientLight;
+let keyLight;
+let rimLight;
+let lowerLight;
 
 function syncCanvasDisplaySize() {
   if (!SHOW_UI) {
@@ -196,11 +356,41 @@ function createField(labelText, control) {
   return field;
 }
 
+function getColorSelectionFromInputs(colorMode, colorValue) {
+  const normalizedMode = normalizeColorMode(colorMode);
+
+  return {
+    colorMode: normalizedMode,
+    primaryColor:
+      normalizedMode === 'custom'
+        ? normalizeHexColor(colorValue) || BASE_PRIMARY_COLOR
+        : null
+  };
+}
+
 function buildPreviewUrl(nextSelection) {
   const nextUrl = new URL(window.location.href);
   nextUrl.searchParams.set('logo', nextSelection.logoId);
   nextUrl.searchParams.set('variant', nextSelection.variantId);
   nextUrl.searchParams.set('preset', nextSelection.presetId);
+
+  if (nextSelection.colorMode !== DEFAULT_COLOR_MODE) {
+    nextUrl.searchParams.set('colorMode', nextSelection.colorMode);
+  } else {
+    nextUrl.searchParams.delete('colorMode');
+  }
+
+  if (nextSelection.colorMode === 'custom' && nextSelection.primaryColor) {
+    nextUrl.searchParams.set('primaryColor', nextSelection.primaryColor);
+  } else {
+    nextUrl.searchParams.delete('primaryColor');
+  }
+
+  if (nextSelection.autoSpin) {
+    nextUrl.searchParams.set('autospin', '1');
+  } else {
+    nextUrl.searchParams.delete('autospin');
+  }
 
   if (uiParam === '1') {
     nextUrl.searchParams.set('ui', '1');
@@ -227,7 +417,6 @@ function createDetailButton(labelText, metaText) {
   meta.textContent = metaText;
 
   button.append(label, meta);
-  button._labelElement = label;
   button._metaElement = meta;
 
   return button;
@@ -298,17 +487,6 @@ function triggerBlobDownload(blob, fileName) {
   window.setTimeout(() => {
     URL.revokeObjectURL(objectUrl);
   }, 1000);
-}
-
-function decodeBase64ToBlob(base64, mimeType) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return new Blob([bytes], { type: mimeType });
 }
 
 async function probeAssetWithMethod(url, method) {
@@ -441,35 +619,26 @@ async function runBusyExport(button, pendingMessage, action) {
   }
 }
 
-async function handleCapturePngDownload() {
-  const fileNames = buildDownloadFileNames();
+function navigateToSelection(nextSelection) {
+  const nextUrl = buildPreviewUrl(nextSelection);
 
-  await runBusyExport(capturePngButton, 'Preparing PNG...', async () => {
-    triggerUrlDownload(capturePng(), fileNames.png);
-  });
-}
-
-async function handleGlbDownload() {
-  const fileNames = buildDownloadFileNames();
-
-  await runBusyExport(downloadGlbButton, 'Preparing GLB...', async () => {
-    const glbBase64 = await exportGLB();
-    const glbBlob = decodeBase64ToBlob(glbBase64, 'model/gltf-binary');
-    triggerBlobDownload(glbBlob, fileNames.glb);
-  });
-}
-
-function handlePresetAssetDownload(button) {
-  const assetUrl = button.dataset.assetUrl;
-  const fileName = button.dataset.fileName;
-
-  if (!assetUrl || !fileName) {
-    setExportStatus('Unavailable', 'error', STATUS_AUTO_CLEAR_MS);
+  if (nextUrl.toString() === window.location.href) {
     return;
   }
 
-  triggerUrlDownload(assetUrl, fileName);
-  setExportStatus('Downloaded', 'success', STATUS_AUTO_CLEAR_MS);
+  window.location.assign(nextUrl.toString());
+}
+
+function persistAutoSpinPreference() {
+  const nextUrl = buildPreviewUrl({
+    logoId: PROFILE.logoId,
+    variantId: PROFILE.variantId,
+    presetId: PROFILE.presetId,
+    colorMode: activeColorState.colorMode,
+    primaryColor: activeColorState.primaryColor,
+    autoSpin: autoRotateActive
+  });
+  window.history.replaceState({}, '', nextUrl.toString());
 }
 
 function mountViewerUi() {
@@ -484,7 +653,8 @@ function mountViewerUi() {
   title.textContent = 'Interactive Preview';
 
   const copy = document.createElement('p');
-  copy.textContent = 'Drag to orbit, scroll to zoom, right-drag to pan, or let the viewer spin the scene for you.';
+  copy.textContent =
+    'Drag to orbit, scroll to zoom, right-drag to pan, then lock in the preset and color treatment you want to export.';
 
   const grid = document.createElement('div');
   grid.className = 'viewer-ui__grid';
@@ -517,9 +687,96 @@ function mountViewerUi() {
     )
   );
 
+  const colorModeSelect = document.createElement('select');
+  colorModeSelect.className = 'viewer-ui__select';
+  colorModeSelect.append(
+    ...createSelectOptions(
+      Object.entries(COLOR_MODE_LABELS).map(([id, label]) => ({
+        id,
+        label
+      })),
+      activeColorState.colorMode
+    )
+  );
+
+  const customColorWrap = document.createElement('div');
+  customColorWrap.className = 'viewer-ui__inline';
+
+  const colorPicker = document.createElement('input');
+  colorPicker.type = 'color';
+  colorPicker.className = 'viewer-ui__color';
+  colorPicker.value = `#${activeColorState.primaryColor || BASE_PRIMARY_COLOR}`;
+
+  const colorText = document.createElement('input');
+  colorText.type = 'text';
+  colorText.className = 'viewer-ui__text';
+  colorText.inputMode = 'text';
+  colorText.spellcheck = false;
+  colorText.maxLength = 7;
+  colorText.value = (activeColorState.primaryColor || BASE_PRIMARY_COLOR).toUpperCase();
+  colorText.setAttribute('aria-label', 'Primary color hex');
+
+  const syncCustomColorInputs = (value, force = false) => {
+    const normalized = normalizeHexColor(value);
+
+    if (normalized) {
+      colorPicker.value = `#${normalized}`;
+      colorText.value = normalized.toUpperCase();
+      return normalized;
+    }
+
+    if (force) {
+      colorPicker.value = `#${BASE_PRIMARY_COLOR}`;
+      colorText.value = BASE_PRIMARY_COLOR.toUpperCase();
+      return BASE_PRIMARY_COLOR;
+    }
+
+    return null;
+  };
+
+  colorPicker.addEventListener('input', () => {
+    syncCustomColorInputs(colorPicker.value, true);
+  });
+
+  colorText.addEventListener('input', () => {
+    syncCustomColorInputs(colorText.value, false);
+  });
+
+  colorText.addEventListener('blur', () => {
+    syncCustomColorInputs(colorText.value, true);
+  });
+
+  customColorWrap.append(colorPicker, colorText);
+  const customColorField = createField('Primary Color', customColorWrap);
+
+  const syncCustomColorVisibility = () => {
+    customColorField.hidden = colorModeSelect.value !== 'custom';
+  };
+
+  const navigateWithInputs = () => {
+    const colorSelection = getColorSelectionFromInputs(colorModeSelect.value, colorText.value);
+    navigateToSelection({
+      logoId: logoSelect.value,
+      variantId: variantSelect.value,
+      presetId: presetSelect.value,
+      colorMode: colorSelection.colorMode,
+      primaryColor: colorSelection.primaryColor,
+      autoSpin: autoRotateActive
+    });
+  };
+
+  colorModeSelect.addEventListener('change', () => {
+    syncCustomColorVisibility();
+    navigateWithInputs();
+  });
+  syncCustomColorVisibility();
+
   logoSelect.addEventListener('change', () => {
     replaceVariantOptions(variantSelect, logoSelect.value, variantSelect.value);
+    navigateWithInputs();
   });
+  variantSelect.addEventListener('change', navigateWithInputs);
+  presetSelect.addEventListener('change', navigateWithInputs);
 
   const actions = document.createElement('div');
   actions.className = 'viewer-ui__actions';
@@ -531,29 +788,44 @@ function mountViewerUi() {
     toggleAutoRotate();
   });
 
-  const applyButton = document.createElement('button');
-  applyButton.type = 'button';
-  applyButton.className = 'viewer-ui__button viewer-ui__button--primary';
-  applyButton.textContent = 'Apply Scene';
-  applyButton.addEventListener('click', () => {
-    const nextUrl = buildPreviewUrl({
-      logoId: logoSelect.value,
-      variantId: variantSelect.value,
-      presetId: presetSelect.value
-    });
-    window.location.assign(nextUrl.toString());
-  });
-
   const resetButton = document.createElement('button');
   resetButton.type = 'button';
-  resetButton.className = 'viewer-ui__button';
+  resetButton.className = 'viewer-ui__button viewer-ui__button--full';
   resetButton.textContent = 'Reset View';
   resetButton.addEventListener('click', () => {
     resetView();
   });
 
-  actions.append(autoRotateButton, applyButton, resetButton);
+  actions.append(autoRotateButton, resetButton);
   syncAutoRotateButton();
+
+  colorPicker.addEventListener('change', () => {
+    syncCustomColorInputs(colorPicker.value, true);
+    if (colorModeSelect.value === 'custom') {
+      navigateWithInputs();
+    }
+  });
+
+  colorText.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    event.preventDefault();
+    syncCustomColorInputs(colorText.value, true);
+
+    if (colorModeSelect.value === 'custom') {
+      navigateWithInputs();
+    }
+  });
+
+  colorText.addEventListener('blur', () => {
+    syncCustomColorInputs(colorText.value, true);
+
+    if (colorModeSelect.value === 'custom') {
+      navigateWithInputs();
+    }
+  });
 
   const exportSection = document.createElement('section');
   exportSection.className = 'viewer-ui__section';
@@ -620,6 +892,8 @@ function mountViewerUi() {
     createField('Logo', logoSelect),
     createField('Variant', variantSelect),
     createField('Preset', presetSelect),
+    createField('Color Mode', colorModeSelect),
+    customColorField,
     actions,
     exportSection
   );
@@ -737,11 +1011,172 @@ function createProjectionPlateTexture() {
   return texture;
 }
 
+function createLightColumnTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 1024;
+
+  const context = canvas.getContext('2d');
+  const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+  gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.55)');
+  gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
+  gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.55)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const vignette = context.createRadialGradient(
+    canvas.width / 2,
+    canvas.height / 2,
+    40,
+    canvas.width / 2,
+    canvas.height / 2,
+    canvas.width / 2
+  );
+  vignette.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+  vignette.addColorStop(0.6, 'rgba(255, 255, 255, 0.24)');
+  vignette.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+  context.fillStyle = vignette;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function radiusPoint(angle, radius) {
   return {
     x: Math.cos(angle) * radius,
     y: Math.sin(angle) * radius
   };
+}
+
+function createMaterialPair(colors) {
+  return {
+    face: new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(colors.face),
+      emissive: new THREE.Color(colors.faceEmissive),
+      emissiveIntensity: CONFIG.materials.face.emissiveIntensity,
+      metalness: CONFIG.materials.face.metalness,
+      roughness: CONFIG.materials.face.roughness,
+      clearcoat: CONFIG.materials.face.clearcoat,
+      clearcoatRoughness: CONFIG.materials.face.clearcoatRoughness,
+      reflectivity: CONFIG.materials.face.reflectivity,
+      side: THREE.DoubleSide
+    }),
+    side: new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(colors.side),
+      emissive: new THREE.Color(colors.sideEmissive),
+      emissiveIntensity: CONFIG.materials.side.emissiveIntensity,
+      metalness: CONFIG.materials.side.metalness,
+      roughness: CONFIG.materials.side.roughness,
+      clearcoat: CONFIG.materials.side.clearcoat,
+      clearcoatRoughness: CONFIG.materials.side.clearcoatRoughness,
+      side: THREE.DoubleSide
+    })
+  };
+}
+
+function getDominantSvgColor(paths) {
+  const counts = new Map();
+
+  for (const pathData of paths) {
+    const key = pathData.color.getHexString();
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+
+  let dominantColor = BASE_PRIMARY_COLOR;
+  let dominantCount = -1;
+
+  for (const [key, count] of counts.entries()) {
+    if (count > dominantCount) {
+      dominantColor = key;
+      dominantCount = count;
+    }
+  }
+
+  return dominantColor;
+}
+
+function resolveActiveColorState(svgData) {
+  const nextConfig = structuredClone(BASE_CONFIG);
+  const dominantSvgColor = getDominantSvgColor(svgData.paths);
+
+  if (REQUESTED_COLOR_SELECTION.mode !== DEFAULT_COLOR_MODE) {
+    const palette = derivePaletteFromHex(
+      REQUESTED_COLOR_SELECTION.mode === 'original-svg'
+        ? dominantSvgColor
+        : REQUESTED_COLOR_SELECTION.primaryColor || BASE_PRIMARY_COLOR,
+      REQUESTED_COLOR_SELECTION.mode
+    );
+    applyRuntimePalette(nextConfig, palette);
+  }
+
+  CONFIG = nextConfig;
+
+  return {
+    colorMode: REQUESTED_COLOR_SELECTION.mode,
+    primaryColor: REQUESTED_COLOR_SELECTION.primaryColor,
+    dominantSvgColor
+  };
+}
+
+function createSvgMaterialPairCache() {
+  const cache = new Map();
+
+  return (fillHex) => {
+    const key = fillHex.toLowerCase();
+
+    if (!cache.has(key)) {
+      const palette = derivePaletteFromHex(key, 'original-svg');
+      cache.set(
+        key,
+        createMaterialPair({
+          face: `#${palette.face}`,
+          faceEmissive: `#${palette.faceEmissive}`,
+          side: `#${palette.side}`,
+          sideEmissive: `#${palette.sideEmissive}`
+        })
+      );
+    }
+
+    return cache.get(key);
+  };
+}
+
+function buildLightRig() {
+  ambientLight = new THREE.HemisphereLight(
+    CONFIG.lighting.ambientSky,
+    CONFIG.lighting.ambientGround,
+    CONFIG.lighting.ambientIntensity
+  );
+  scene.add(ambientLight);
+
+  keyLight = new THREE.DirectionalLight(
+    CONFIG.lighting.keyColor,
+    CONFIG.lighting.keyIntensity
+  );
+  keyLight.position.fromArray(CONFIG.lighting.keyPosition);
+  scene.add(keyLight);
+
+  rimLight = new THREE.DirectionalLight(
+    CONFIG.lighting.rimColor,
+    CONFIG.lighting.rimIntensity
+  );
+  rimLight.position.fromArray(CONFIG.lighting.rimPosition);
+  scene.add(rimLight);
+
+  lowerLight = new THREE.PointLight(
+    CONFIG.lighting.lowerColor,
+    CONFIG.lighting.lowerIntensity,
+    CONFIG.lighting.lowerDistance,
+    CONFIG.lighting.lowerDecay
+  );
+  lowerLight.position.fromArray(CONFIG.lighting.lowerPosition);
+  scene.add(lowerLight);
 }
 
 function addGlowAccents() {
@@ -860,43 +1295,129 @@ function addStageElements() {
     parts.projectionPlate = projectionPlate;
   }
 
+  if (CONFIG.lightColumn.enabled) {
+    const columnTexture = createLightColumnTexture();
+    const columnGroup = new THREE.Group();
+
+    const createColumnPlane = (width, height, color, opacity) =>
+      new THREE.Mesh(
+        new THREE.PlaneGeometry(width, height),
+        new THREE.MeshBasicMaterial({
+          map: columnTexture,
+          color: new THREE.Color(color),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          opacity,
+          side: THREE.DoubleSide
+        })
+      );
+
+    const frontColumn = createColumnPlane(
+      CONFIG.lightColumn.width,
+      CONFIG.lightColumn.height,
+      CONFIG.lightColumn.color,
+      CONFIG.lightColumn.opacity
+    );
+    const sideColumn = createColumnPlane(
+      CONFIG.lightColumn.width,
+      CONFIG.lightColumn.height,
+      CONFIG.lightColumn.color,
+      CONFIG.lightColumn.opacity * 0.8
+    );
+    sideColumn.rotation.y = Math.PI / 2;
+
+    const coreColumn = createColumnPlane(
+      CONFIG.lightColumn.width * 0.42,
+      CONFIG.lightColumn.height * 0.92,
+      CONFIG.lightColumn.coreColor,
+      CONFIG.lightColumn.coreOpacity
+    );
+
+    columnGroup.add(frontColumn, sideColumn, coreColumn);
+    columnGroup.position.set(0, CONFIG.lightColumn.y, CONFIG.lightColumn.z);
+    stageRig.add(columnGroup);
+
+    parts.lightColumnGroup = columnGroup;
+    parts.lightColumnPlanes = [frontColumn, sideColumn];
+    parts.lightColumnCore = coreColumn;
+  }
+
+  if (CONFIG.shieldPanel.enabled) {
+    const shieldGroup = new THREE.Group();
+
+    const slab = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        CONFIG.shieldPanel.width,
+        CONFIG.shieldPanel.height,
+        CONFIG.shieldPanel.thickness
+      ),
+      new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(CONFIG.shieldPanel.color),
+        transparent: true,
+        opacity: CONFIG.shieldPanel.opacity,
+        transmission: 0.68,
+        thickness: CONFIG.shieldPanel.thickness,
+        metalness: 0.08,
+        roughness: 0.06,
+        clearcoat: 1,
+        clearcoatRoughness: 0.04,
+        depthWrite: false
+      })
+    );
+
+    const edgeGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(
+        CONFIG.shieldPanel.width * 1.03,
+        CONFIG.shieldPanel.height * 1.03
+      ),
+      new THREE.MeshBasicMaterial({
+        map: createStageHaloTexture(),
+        color: new THREE.Color(CONFIG.shieldPanel.edgeColor),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        opacity: CONFIG.shieldPanel.edgeOpacity,
+        side: THREE.DoubleSide
+      })
+    );
+
+    shieldGroup.add(slab, edgeGlow);
+    shieldGroup.position.set(0, CONFIG.shieldPanel.y, CONFIG.shieldPanel.z);
+    stageRig.add(shieldGroup);
+
+    parts.shieldPanelGroup = shieldGroup;
+    parts.shieldPanelSlab = slab;
+    parts.shieldPanelEdge = edgeGlow;
+  }
+
   return Object.keys(parts).length > 0 ? parts : null;
 }
 
-function createMaterials() {
-  return {
-    face: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(CONFIG.materials.face.color),
-      emissive: new THREE.Color(CONFIG.materials.face.emissive),
-      emissiveIntensity: CONFIG.materials.face.emissiveIntensity,
-      metalness: CONFIG.materials.face.metalness,
-      roughness: CONFIG.materials.face.roughness,
-      clearcoat: CONFIG.materials.face.clearcoat,
-      clearcoatRoughness: CONFIG.materials.face.clearcoatRoughness,
-      reflectivity: CONFIG.materials.face.reflectivity,
-      side: THREE.DoubleSide
-    }),
-    side: new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(CONFIG.materials.side.color),
-      emissive: new THREE.Color(CONFIG.materials.side.emissive),
-      emissiveIntensity: CONFIG.materials.side.emissiveIntensity,
-      metalness: CONFIG.materials.side.metalness,
-      roughness: CONFIG.materials.side.roughness,
-      clearcoat: CONFIG.materials.side.clearcoat,
-      clearcoatRoughness: CONFIG.materials.side.clearcoatRoughness,
-      side: THREE.DoubleSide
-    })
-  };
-}
-
-async function loadLogoGroup() {
-  const loader = new SVGLoader();
-  const data = await loader.loadAsync(CONFIG.svgUrl);
+async function buildLogoGroup(svgData, colorState) {
   const logoGroup = new THREE.Group();
-  const materials = createMaterials();
+  const sharedMaterials =
+    colorState.colorMode === 'original-svg'
+      ? null
+      : createMaterialPair({
+          face: CONFIG.materials.face.color,
+          faceEmissive: CONFIG.materials.face.emissive,
+          side: CONFIG.materials.side.color,
+          sideEmissive: CONFIG.materials.side.emissive
+        });
+  const getSvgMaterials = createSvgMaterialPairCache();
 
-  for (const pathData of data.paths) {
+  for (const pathData of svgData.paths) {
     const shapes = SVGLoader.createShapes(pathData);
+
+    if (shapes.length === 0) {
+      continue;
+    }
+
+    const materials =
+      colorState.colorMode === 'original-svg'
+        ? getSvgMaterials(pathData.color.getHexString())
+        : sharedMaterials;
 
     for (const shape of shapes) {
       const geometry = new THREE.ExtrudeGeometry(shape, {
@@ -958,9 +1479,6 @@ async function loadLogoGroup() {
   return group;
 }
 
-const glowParts = addGlowAccents();
-const stageParts = addStageElements();
-
 function frameScene() {
   renderer.render(scene, camera);
 }
@@ -993,6 +1511,7 @@ function startAutoRotate() {
   autoRotateActive = true;
   controls.autoRotate = true;
   syncAutoRotateButton();
+  persistAutoSpinPreference();
 
   if (!autoRotateFrameId) {
     autoRotateFrameId = window.requestAnimationFrame(autoRotateTick);
@@ -1016,6 +1535,7 @@ function stopAutoRotate() {
   }
 
   syncAutoRotateButton();
+  persistAutoSpinPreference();
 }
 
 function toggleAutoRotate() {
@@ -1092,10 +1612,43 @@ function setProgress(progress) {
     }
   }
 
+  if (stageParts?.lightColumnGroup) {
+    const opacity =
+      (CONFIG.lightColumn.opacity - CONFIG.lightColumn.pulseAmplitude / 2) +
+      shimmer * CONFIG.lightColumn.pulseAmplitude;
+    const coreOpacity =
+      (CONFIG.lightColumn.coreOpacity - CONFIG.lightColumn.pulseAmplitude / 3) +
+      shimmer * (CONFIG.lightColumn.pulseAmplitude * 0.66);
+    const scale =
+      1 - (CONFIG.lightColumn.scalePulse / 2) + shimmer * CONFIG.lightColumn.scalePulse;
+
+    for (const plane of stageParts.lightColumnPlanes) {
+      plane.material.opacity = opacity;
+    }
+
+    stageParts.lightColumnCore.material.opacity = coreOpacity;
+    stageParts.lightColumnGroup.scale.set(scale, scale, 1);
+  }
+
+  if (stageParts?.shieldPanelGroup) {
+    const opacity =
+      (CONFIG.shieldPanel.opacity - CONFIG.shieldPanel.pulseAmplitude / 2) +
+      shimmer * CONFIG.shieldPanel.pulseAmplitude;
+    const edgeOpacity =
+      (CONFIG.shieldPanel.edgeOpacity - CONFIG.shieldPanel.pulseAmplitude / 3) +
+      shimmer * (CONFIG.shieldPanel.pulseAmplitude * 0.66);
+    const scale =
+      1 - (CONFIG.shieldPanel.scalePulse / 2) + shimmer * CONFIG.shieldPanel.scalePulse;
+
+    stageParts.shieldPanelSlab.material.opacity = opacity;
+    stageParts.shieldPanelEdge.material.opacity = edgeOpacity;
+    stageParts.shieldPanelGroup.scale.set(scale, scale, 1);
+  }
+
   frameScene();
 }
 
-async function exportGLB() {
+async function exportGLBBlob() {
   const exporter = new GLTFExporter();
 
   return await new Promise((resolve, reject) => {
@@ -1107,15 +1660,12 @@ async function exportGLB() {
           return;
         }
 
-        const bytes = new Uint8Array(result);
-        let binary = '';
-
-        for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-          const chunk = bytes.subarray(offset, offset + 0x8000);
-          binary += String.fromCharCode(...chunk);
+        if (result.byteLength === 0) {
+          reject(new Error('Received empty GLB output.'));
+          return;
         }
 
-        resolve(btoa(binary));
+        resolve(new Blob([result], { type: 'model/gltf-binary' }));
       },
       (error) => reject(error),
       {
@@ -1127,11 +1677,58 @@ async function exportGLB() {
   });
 }
 
+async function downloadGLB(fileName) {
+  const glbBlob = await exportGLBBlob();
+  triggerBlobDownload(glbBlob, fileName);
+}
+
+async function handleCapturePngDownload() {
+  const fileNames = buildDownloadFileNames();
+
+  await runBusyExport(capturePngButton, 'Preparing PNG...', async () => {
+    triggerUrlDownload(capturePng(), fileNames.png);
+  });
+}
+
+async function handleGlbDownload() {
+  const fileNames = buildDownloadFileNames();
+
+  await runBusyExport(downloadGlbButton, 'Preparing GLB...', async () => {
+    await downloadGLB(fileNames.glb);
+  });
+}
+
+function handlePresetAssetDownload(button) {
+  const assetUrl = button.dataset.assetUrl;
+  const fileName = button.dataset.fileName;
+
+  if (!assetUrl || !fileName) {
+    setExportStatus('Unavailable', 'error', STATUS_AUTO_CLEAR_MS);
+    return;
+  }
+
+  triggerUrlDownload(assetUrl, fileName);
+  setExportStatus('Downloaded', 'success', STATUS_AUTO_CLEAR_MS);
+}
+
 function capturePng() {
   return renderer.domElement.toDataURL('image/png');
 }
 
 async function init() {
+  const loader = new SVGLoader();
+  const svgData = await loader.loadAsync(CONFIG.svgUrl);
+  activeColorState = resolveActiveColorState(svgData);
+
+  scene.background = new THREE.Color(CONFIG.background);
+  renderer.setClearColor(new THREE.Color(CONFIG.background), 1);
+  document.body.style.background = CONFIG.background;
+  camera.position.fromArray(CONFIG.camera.position);
+
+  buildLightRig();
+  glowParts = addGlowAccents();
+  stageParts = addStageElements();
+
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = false;
   controls.autoRotate = false;
@@ -1147,7 +1744,12 @@ async function init() {
   controls.addEventListener('change', frameScene);
   controls.addEventListener('start', () => {
     if (autoRotateActive) {
-      stopAutoRotate();
+      controls.autoRotate = false;
+    }
+  });
+  controls.addEventListener('end', () => {
+    if (autoRotateActive) {
+      controls.autoRotate = true;
     }
   });
 
@@ -1156,21 +1758,28 @@ async function init() {
   mountViewerUi();
   void refreshPresetAssetButtons();
 
-  const logo = await loadLogoGroup();
+  const logo = await buildLogoGroup(svgData, activeColorState);
   logoRig.add(logo);
   resetView();
   setCurrentViewButtonsReady();
+
+  if (requestedAutoSpin) {
+    startAutoRotate();
+  }
 
   window.sceneApi = {
     isReady: true,
     capturePng,
     setProgress,
     resetView,
-    exportGLB,
+    downloadGLB,
     getMeta: () => ({
       logo: PROFILE.logoId,
       variant: PROFILE.variantId,
-      preset: PROFILE.presetId
+      preset: PROFILE.presetId,
+      colorMode: activeColorState.colorMode,
+      primaryColor: activeColorState.primaryColor,
+      dominantSvgColor: activeColorState.dominantSvgColor
     })
   };
 }

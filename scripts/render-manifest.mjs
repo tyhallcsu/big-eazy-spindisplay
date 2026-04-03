@@ -354,7 +354,13 @@ export const sceneDefaults = {
   baseHalo: {
     enabled: false
   },
+  lightColumn: {
+    enabled: false
+  },
   projectionPlate: {
+    enabled: false
+  },
+  shieldPanel: {
     enabled: false
   },
   camera: {
@@ -717,6 +723,362 @@ export const presetDefinitions = {
         lowerPosition: [0, -2.05, 4.5]
       }
     }
+  },
+  'midnight-emboss': {
+    label: 'Midnight Emboss',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.7,
+      camera: {
+        position: [0, 0.22, 13.45],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.035,
+        orbitYAmplitude: 0.01,
+        orbitZAmplitude: 0.02
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.12,
+        turns: 1,
+        tiltX: 0.14,
+        driftY: 0.006,
+        driftRoll: 0.005
+      },
+      extrusionDepth: 48,
+      bevelThickness: 6.8,
+      bevelSize: 4.2,
+      bevelSegments: 6,
+      glow: {
+        enabled: false
+      },
+      baseHalo: {
+        enabled: false
+      },
+      projectionPlate: {
+        enabled: false
+      },
+      lightColumn: {
+        enabled: false
+      },
+      shieldPanel: {
+        enabled: false
+      },
+      materials: {
+        face: {
+          color: '#8b95a2',
+          emissive: '#36414e',
+          emissiveIntensity: 0.12,
+          metalness: 0.72,
+          roughness: 0.22,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          reflectivity: 0.62
+        },
+        side: {
+          color: '#232a32',
+          emissive: '#131920',
+          emissiveIntensity: 0.06,
+          metalness: 0.6,
+          roughness: 0.34,
+          clearcoat: 0.55,
+          clearcoatRoughness: 0.18
+        },
+        frame: {
+          enabled: false
+        }
+      },
+      lighting: {
+        ambientSky: '#f5f7fb',
+        ambientGround: '#010204',
+        ambientIntensity: 0.92,
+        keyColor: '#f5f8ff',
+        keyIntensity: 2.85,
+        keyPosition: [5.8, 5.3, 7.6],
+        rimColor: '#aeb9c8',
+        rimIntensity: 2.45,
+        rimPosition: [-5.6, 1.7, -4.4],
+        lowerColor: '#263242',
+        lowerIntensity: 4.6,
+        lowerDistance: 18,
+        lowerDecay: 2,
+        lowerPosition: [0, -2.0, 4.0]
+      }
+    }
+  },
+  'signal-beacon': {
+    label: 'Signal Beacon',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.68,
+      camera: {
+        position: [0, 0.28, 13.2],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.06,
+        orbitYAmplitude: 0.022,
+        orbitZAmplitude: 0.03
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.08,
+        turns: 1,
+        tiltX: 0.18,
+        driftY: 0.012,
+        driftRoll: 0.01
+      },
+      extrusionDepth: 42,
+      bevelThickness: 5.2,
+      bevelSize: 3.6,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#b5fbff',
+        innerColor: '#64ebff',
+        beamColor: '#9cf7ff',
+        haloOpacity: 0.26,
+        innerOpacity: 0.2,
+        beamOpacity: 0.08,
+        haloScale: 9.8,
+        innerScale: 7.2,
+        beamWidth: 2.2,
+        beamHeight: 10.2,
+        haloPosition: [0, 0.16, -1.7],
+        innerPosition: [0, 0.12, -1.02],
+        beamPosition: [0, 0.08, -1.95],
+        pulseAmplitude: 0.04,
+        innerPulseAmplitude: 0.03,
+        beamPulseAmplitude: 0.02,
+        rotationFactor: -0.08
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#78ecff',
+        opacity: 0.12,
+        width: 5.2,
+        depth: 2.9,
+        y: -1.3,
+        z: 0,
+        pulseAmplitude: 0.03,
+        scalePulse: 0.04
+      },
+      lightColumn: {
+        enabled: true,
+        color: '#6ce8ff',
+        coreColor: '#e4fdff',
+        opacity: 0.13,
+        coreOpacity: 0.08,
+        width: 4.8,
+        height: 10.8,
+        y: 0.24,
+        z: -1.45,
+        pulseAmplitude: 0.04,
+        scalePulse: 0.04
+      },
+      materials: {
+        face: {
+          color: '#c2fdff',
+          emissive: '#5cecff',
+          emissiveIntensity: 0.92,
+          metalness: 0.2,
+          roughness: 0.12,
+          clearcoat: 1,
+          clearcoatRoughness: 0.1,
+          reflectivity: 0.82
+        },
+        side: {
+          color: '#15749a',
+          emissive: '#1096bd',
+          emissiveIntensity: 0.54,
+          metalness: 0.24,
+          roughness: 0.3,
+          clearcoat: 0.7,
+          clearcoatRoughness: 0.18
+        },
+        frame: {
+          enabled: false
+        }
+      }
+    }
+  },
+  'glass-panel-hologram': {
+    label: 'Glass Panel Hologram',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#000000',
+      logoSize: 5.62,
+      camera: {
+        position: [0, 0.3, 13.24],
+        lookAt: [0, 0.18, 0],
+        orbitXAmplitude: 0.075,
+        orbitYAmplitude: 0.025,
+        orbitZAmplitude: 0.03
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.09,
+        turns: 1,
+        tiltX: 0.2,
+        driftY: 0.014,
+        driftRoll: 0.012
+      },
+      extrusionDepth: 40,
+      bevelThickness: 4.8,
+      bevelSize: 3.2,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#b5fbff',
+        innerColor: '#68ecff',
+        beamColor: '#a4f7ff',
+        haloOpacity: 0.22,
+        innerOpacity: 0.16,
+        beamOpacity: 0.06,
+        haloScale: 9.2,
+        innerScale: 6.8,
+        beamWidth: 2.1,
+        beamHeight: 9.8,
+        haloPosition: [0, 0.14, -1.62],
+        innerPosition: [0, 0.1, -1.0],
+        beamPosition: [0, 0.06, -1.86],
+        pulseAmplitude: 0.03,
+        innerPulseAmplitude: 0.025,
+        beamPulseAmplitude: 0.015,
+        rotationFactor: -0.06
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#66e9ff',
+        opacity: 0.1,
+        width: 5.1,
+        depth: 2.8,
+        y: -1.3,
+        z: 0,
+        pulseAmplitude: 0.025,
+        scalePulse: 0.04
+      },
+      shieldPanel: {
+        enabled: true,
+        color: '#b6fbff',
+        edgeColor: '#66ecff',
+        opacity: 0.08,
+        edgeOpacity: 0.22,
+        width: 5.95,
+        height: 7.5,
+        thickness: 0.14,
+        y: 0.18,
+        z: -0.68,
+        pulseAmplitude: 0.02,
+        scalePulse: 0.025
+      },
+      materials: {
+        face: {
+          color: '#b8fbff',
+          emissive: '#56ddff',
+          emissiveIntensity: 0.88,
+          metalness: 0.16,
+          roughness: 0.14,
+          clearcoat: 1,
+          clearcoatRoughness: 0.08,
+          reflectivity: 0.84
+        },
+        side: {
+          color: '#11688c',
+          emissive: '#0d88b0',
+          emissiveIntensity: 0.46,
+          metalness: 0.22,
+          roughness: 0.28,
+          clearcoat: 0.72,
+          clearcoatRoughness: 0.18
+        },
+        frame: {
+          enabled: false
+        }
+      }
+    }
+  },
+  'amber-marquee': {
+    label: 'Amber Marquee',
+    outputs: createConceptOutputs(),
+    scene: {
+      background: '#020100',
+      ...createWarmPalette(),
+      logoSize: 5.6,
+      camera: {
+        position: [0, 0.24, 13.5],
+        lookAt: [0, 0.16, 0],
+        orbitXAmplitude: 0.055,
+        orbitYAmplitude: 0.02,
+        orbitZAmplitude: 0.025
+      },
+      animation: {
+        mode: 'loop',
+        stillProgress: 0.1,
+        turns: 1,
+        tiltX: 0.18,
+        driftY: 0.01,
+        driftRoll: 0.008
+      },
+      extrusionDepth: 46,
+      bevelThickness: 6.2,
+      bevelSize: 4.2,
+      bevelSegments: 6,
+      glow: {
+        enabled: true,
+        haloColor: '#ffe48a',
+        innerColor: '#ffbf61',
+        beamColor: '#ffd174',
+        haloOpacity: 0.18,
+        innerOpacity: 0.11,
+        beamOpacity: 0.05,
+        haloScale: 9.4,
+        innerScale: 6.8,
+        beamWidth: 2.05,
+        beamHeight: 9.0,
+        haloPosition: [0, 0.1, -1.62],
+        innerPosition: [0, 0.08, -0.98],
+        beamPosition: [0, 0.08, -1.86],
+        pulseAmplitude: 0.03,
+        innerPulseAmplitude: 0.02,
+        beamPulseAmplitude: 0.015,
+        rotationFactor: -0.06
+      },
+      baseHalo: {
+        enabled: true,
+        color: '#ffca69',
+        opacity: 0.08,
+        width: 5.2,
+        depth: 2.8,
+        y: -1.28,
+        z: 0,
+        pulseAmplitude: 0.02,
+        scalePulse: 0.03
+      },
+      materials: {
+        face: {
+          color: '#fff0b4',
+          emissive: '#ffc768',
+          emissiveIntensity: 0.5,
+          metalness: 0.48,
+          roughness: 0.15,
+          clearcoat: 1,
+          clearcoatRoughness: 0.06,
+          reflectivity: 0.86
+        },
+        side: {
+          color: '#ba7323',
+          emissive: '#d88c2d',
+          emissiveIntensity: 0.3,
+          metalness: 0.44,
+          roughness: 0.24,
+          clearcoat: 0.82,
+          clearcoatRoughness: 0.1
+        },
+        frame: {
+          enabled: false
+        }
+      }
+    }
   }
 };
 
@@ -755,6 +1117,84 @@ export const logos = {
           mode: 'filter-max-y',
           maxY: 720,
           excludeText: ['Once You', 'Want Off']
+        },
+        scene: {
+          logoSize: 6
+        }
+      }
+    }
+  },
+  'big-eazy-v2': {
+    label: 'Big Eazy v2',
+    sourceSvg: 'source/big-eazy-v2/big-eazy-v2.svg',
+    defaultVariant: 'display',
+    palette: createCyanPalette(),
+    variants: {
+      full: {
+        label: 'Full',
+        derivedSvg: 'source/big-eazy-v2/full.svg',
+        derive: {
+          mode: 'copy'
+        },
+        scene: {
+          logoSize: 5.55,
+          camera: {
+            position: [0, 0.28, 13.8]
+          },
+          materials: {
+            frame: {
+              enabled: false
+            }
+          },
+          glow: {
+            enabled: false
+          }
+        }
+      },
+      display: {
+        label: 'Display',
+        derivedSvg: 'source/big-eazy-v2/display.svg',
+        derive: {
+          mode: 'copy'
+        },
+        scene: {
+          logoSize: 6
+        }
+      }
+    }
+  },
+  'big-eazy-v3': {
+    label: 'Big Eazy v3',
+    sourceSvg: 'source/big-eazy-v3/big-eazy-v3.svg',
+    defaultVariant: 'display',
+    palette: createCyanPalette(),
+    variants: {
+      full: {
+        label: 'Full',
+        derivedSvg: 'source/big-eazy-v3/full.svg',
+        derive: {
+          mode: 'copy'
+        },
+        scene: {
+          logoSize: 5.55,
+          camera: {
+            position: [0, 0.28, 13.8]
+          },
+          materials: {
+            frame: {
+              enabled: false
+            }
+          },
+          glow: {
+            enabled: false
+          }
+        }
+      },
+      display: {
+        label: 'Display',
+        derivedSvg: 'source/big-eazy-v3/display.svg',
+        derive: {
+          mode: 'copy'
         },
         scene: {
           logoSize: 6
@@ -891,6 +1331,20 @@ export const jobSets = {
     { logo: 'big-eazy', variant: 'display', preset: 'floating-luxury-hologram' },
     { logo: 'big-eazy', variant: 'display', preset: 'spinning-3d-emblem' },
     { logo: 'big-eazy', variant: 'display', preset: 'futuristic-projection' }
+  ],
+  'shared-deployable-presets': [
+    { logo: 'big-eazy', variant: 'display', preset: 'midnight-emboss' },
+    { logo: 'big-eazy', variant: 'display', preset: 'signal-beacon' },
+    { logo: 'big-eazy', variant: 'display', preset: 'glass-panel-hologram' },
+    { logo: 'big-eazy', variant: 'display', preset: 'amber-marquee' },
+    { logo: 'earth-saving-solutions', variant: 'display', preset: 'midnight-emboss' },
+    { logo: 'earth-saving-solutions', variant: 'display', preset: 'signal-beacon' },
+    { logo: 'earth-saving-solutions', variant: 'display', preset: 'glass-panel-hologram' },
+    { logo: 'earth-saving-solutions', variant: 'display', preset: 'amber-marquee' },
+    { logo: 'munchies-and-mimosas', variant: 'display', preset: 'midnight-emboss' },
+    { logo: 'munchies-and-mimosas', variant: 'display', preset: 'signal-beacon' },
+    { logo: 'munchies-and-mimosas', variant: 'display', preset: 'glass-panel-hologram' },
+    { logo: 'munchies-and-mimosas', variant: 'display', preset: 'amber-marquee' }
   ]
 };
 
