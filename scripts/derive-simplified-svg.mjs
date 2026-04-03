@@ -1,17 +1,45 @@
+import { copyFile } from 'node:fs/promises';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  getLogoDefinition,
+  getVariantDefinition,
+  logos
+} from './render-manifest.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
-const inputSvgPath = path.join(
-  rootDir,
-  '547227273_122137993856924986_8556302376693794118_n.svg'
-);
-const outputDir = path.join(rootDir, 'source');
-const outputSvgPath = path.join(outputDir, 'big-eazy-spindisplay.svg');
 
-const Y_THRESHOLD = 720;
+function parseArgs(argv) {
+  const options = {
+    all: false,
+    logo: null,
+    variant: null
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === '--all') {
+      options.all = true;
+      continue;
+    }
+
+    if (arg === '--logo') {
+      options.logo = argv[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--variant') {
+      options.variant = argv[index + 1];
+      index += 1;
+    }
+  }
+
+  return options;
+}
 
 function getApproximateYBounds(pathData) {
   const numericValues = Array.from(
@@ -31,20 +59,59 @@ function getApproximateYBounds(pathData) {
   return { minY, maxY };
 }
 
-async function main() {
-  await mkdir(outputDir, { recursive: true });
+function getTargetJobs(options) {
+  if (options.all || !options.logo) {
+    return Object.keys(logos).flatMap((logoId) =>
+      Object.keys(getLogoDefinition(logoId).variants).map((variantId) => ({
+        logoId,
+        variantId
+      }))
+    );
+  }
+
+  const logo = getLogoDefinition(options.logo);
+
+  if (options.variant) {
+    getVariantDefinition(options.logo, options.variant);
+    return [
+      {
+        logoId: options.logo,
+        variantId: options.variant
+      }
+    ];
+  }
+
+  return Object.keys(logo.variants).map((variantId) => ({
+    logoId: options.logo,
+    variantId
+  }));
+}
+
+async function deriveVariant({ logoId, variantId }) {
+  const logo = getLogoDefinition(logoId);
+  const { variant } = getVariantDefinition(logoId, variantId);
+  const inputSvgPath = path.join(rootDir, logo.sourceSvg);
+  const outputSvgPath = path.join(rootDir, variant.derivedSvg);
+
+  await mkdir(path.dirname(outputSvgPath), { recursive: true });
+
+  if (variant.derive.mode === 'copy') {
+    await copyFile(inputSvgPath, outputSvgPath);
+    console.log(`Copied ${path.relative(rootDir, outputSvgPath)}`);
+    return;
+  }
 
   const svg = await readFile(inputSvgPath, 'utf8');
   const svgTagMatch = svg.match(/<svg\b[^>]*>/);
 
   if (!svgTagMatch) {
-    throw new Error('Unable to locate the opening <svg> tag in the source file.');
+    throw new Error(`Unable to locate the opening <svg> tag in ${logo.sourceSvg}.`);
   }
 
   const pathTags = Array.from(svg.matchAll(/<path\b[^>]*d="([^"]+)"[^>]*\/>/g));
 
   if (pathTags.length === 0) {
-    throw new Error('Unable to locate any <path> tags in the source file.');
+    throw new Error(`Unable to locate any <path> tags in ${logo.sourceSvg}.`);
   }
 
   const filteredPaths = pathTags
@@ -58,17 +125,17 @@ async function main() {
         maxY: bounds.maxY
       };
     })
-    .filter((entry) => entry.maxY <= Y_THRESHOLD)
+    .filter((entry) => entry.maxY <= variant.derive.maxY)
     .map((entry) => `  ${entry.fullTag}`);
 
   if (filteredPaths.length === 0) {
-    throw new Error('Filtering removed every path. Check the y-threshold logic.');
+    throw new Error(`Filtering removed every path for ${logoId}/${variantId}.`);
   }
 
   const simplifiedSvg = [
     '<?xml version="1.0" encoding="UTF-8" ?>',
     svgTagMatch[0],
-    '<g id="big-eazy-spindisplay">',
+    `<g id="${logoId}-${variantId}">`,
     ...filteredPaths,
     '</g>',
     '</svg>',
@@ -77,9 +144,26 @@ async function main() {
 
   await writeFile(outputSvgPath, simplifiedSvg, 'utf8');
 
+  for (const excludedSnippet of variant.derive.excludeText || []) {
+    if (simplifiedSvg.includes(excludedSnippet)) {
+      throw new Error(
+        `Derived SVG for ${logoId}/${variantId} still contains excluded text "${excludedSnippet}".`
+      );
+    }
+  }
+
   console.log(
     `Created ${path.relative(rootDir, outputSvgPath)} with ${filteredPaths.length} paths.`
   );
+}
+
+async function main() {
+  const options = parseArgs(process.argv.slice(2));
+  const jobs = getTargetJobs(options);
+
+  for (const job of jobs) {
+    await deriveVariant(job);
+  }
 }
 
 main().catch((error) => {

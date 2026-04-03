@@ -1,11 +1,13 @@
 {
-  "name": "big-eazy-spindisplay",
+  "name": "svg-render-workflow",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "derive:svg": "node scripts/derive-simplified-svg.mjs",
-    "build:spin": "node scripts/build-spin-asset.mjs"
+    "derive:svg": "node scripts/derive-simplified-svg.mjs --all",
+    "build:logo": "node scripts/build-logo-renders.mjs",
+    "build:examples": "node scripts/build-logo-renders.mjs --examples",
+    "build:spin": "node scripts/build-logo-renders.mjs --logo big-eazy --variant display --preset spindisplay-loop"
   },
   "dependencies": {
     "playwright": "^1.54.2",
