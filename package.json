@@ -1,0 +1,14 @@
+{
+  "name": "big-eazy-spindisplay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "derive:svg": "node scripts/derive-simplified-svg.mjs",
+    "build:spin": "node scripts/build-spin-asset.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.54.2",
+    "three": "^0.179.1"
+  }
+}
