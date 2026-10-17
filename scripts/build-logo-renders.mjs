@@ -6,6 +6,7 @@ import {
   existsSync
 } from 'node:fs';
 import {
+  copyFile,
   mkdir,
   mkdtemp,
   rm,
@@ -339,7 +340,7 @@ async function ensureDerivedVariant(logoId, variantId) {
   ]);
 }
 
-async function exportGlbIfNeeded(page, glbPath, glbCache) {
+async function exportGlbIfNeeded(page, glbPath, fallbackGlbPath, glbCache) {
   if (glbCache.has(glbPath)) {
     return;
   }
@@ -355,10 +356,27 @@ async function exportGlbIfNeeded(page, glbPath, glbCache) {
 
   await mkdir(path.dirname(glbPath), { recursive: true });
 
-  const downloadPromise = page.waitForEvent('download');
-  await page.evaluate((fileName) => window.sceneApi.downloadGLB(fileName), path.basename(glbPath));
-  const download = await downloadPromise;
-  await download.saveAs(glbPath);
+  try {
+    const downloadPromise = page.waitForEvent('download');
+    await page.evaluate((fileName) => window.sceneApi.downloadGLB(fileName), path.basename(glbPath));
+    const download = await downloadPromise;
+    await download.saveAs(glbPath);
+  } catch (error) {
+    if (!fallbackGlbPath || !existsSync(fallbackGlbPath)) {
+      throw error;
+    }
+
+    const fallbackStat = await stat(fallbackGlbPath);
+
+    if (fallbackStat.size === 0) {
+      throw error;
+    }
+
+    console.warn(
+      `GLB preset export failed for ${path.relative(rootDir, glbPath)}; using fallback ${path.relative(rootDir, fallbackGlbPath)} (${error.message}).`
+    );
+    await copyFile(fallbackGlbPath, glbPath);
+  }
 
   const exported = await stat(glbPath);
 
@@ -430,7 +448,7 @@ async function buildJob(page, origin, job, glbCache) {
   });
 
   if (profile.outputs.glb) {
-    await exportGlbIfNeeded(page, glbPath, glbCache);
+    await exportGlbIfNeeded(page, glbPath, getVariantGlbPath(job.logo, job.variant), glbCache);
   }
 
   await page.evaluate((value) => {
