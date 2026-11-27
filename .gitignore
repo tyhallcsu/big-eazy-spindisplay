@@ -1,3 +1,6 @@
 node_modules/
 .DS_Store
 npm-debug.log*
+
+# >20MB 3D asset (fleet reconcile 2026-11-26)
+renders/big-eazy-v2/full/floating-luxury-hologram/asset.glb
